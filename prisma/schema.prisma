@@ -1,0 +1,401 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Note: SQLite doesn't support enums, so we use String
+// Valid roles: ADMIN, CLIENT, DEALER, AGENT
+// Valid status: PENDING, APPROVED, REJECTED, SUSPENDED
+model User {
+  id                String        @id @default(cuid())
+  email             String        @unique
+  mobile            String?       @unique
+  name              String
+  password          String        // Hashed with bcrypt
+  role              String        @default("CLIENT") // ADMIN, CLIENT, DEALER, AGENT
+  status            String        @default("PENDING") // PENDING, APPROVED, REJECTED, SUSPENDED
+  purposeOfLoginId  String?
+  purposeOfLogin    LoginPurpose? @relation(fields: [purposeOfLoginId], references: [id], onDelete: SetNull)
+  emailVerified     Boolean       @default(false)
+  mobileVerified    Boolean       @default(false)
+  emailVerifiedAt   DateTime?
+  mobileVerifiedAt  DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @default(now()) @updatedAt
+  userPackages      UserPackage[]
+  pdiInspections    PDIInspection[]
+  pdiRequests       PDIConfirmationRequest[]
+  otpVerifications  OTPVerification[]
+  insuranceClaims   InsuranceClaim[]
+  notifications     Notification[]
+}
+
+// Package types: PDI, INSURANCE, SERVICE
+// Status: ACTIVE, INACTIVE
+model Package {
+  id           String        @id @default(cuid())
+  name         String
+  type         String        // PDI, INSURANCE, SERVICE
+  description  String
+  services     String        // JSON array of included services
+  price        Float
+  pdiCount     Int           @default(1) // Number of PDIs included in this package
+  status       String        @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userPackages UserPackage[]
+}
+
+// Links users to their purchased packages
+// Status: ACTIVE, EXHAUSTED, CANCELLED
+model UserPackage {
+  id            String   @id @default(cuid())
+  userId        String
+  packageId     String
+  purchasedAt   DateTime @default(now())
+  pdiRemaining  Int      @default(1) // Number of PDIs remaining
+  pdiUsed       Int      @default(0) // Number of PDIs used
+  status        String   @default("ACTIVE") // ACTIVE, EXHAUSTED, CANCELLED
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+}
+
+// --- PDI Form Structure ---
+
+model PDISection {
+  id          String    @id @default(cuid())
+  name        String
+  order       Int       @default(0)
+  sectionType String    @default("CHECKLIST") // CHECKLIST, LEAKAGE, CONVENIENCE
+  items       PDIItem[]
+}
+
+model PDIItem {
+  id        String     @id @default(cuid())
+  sectionId String
+  label     String
+  order     Int        @default(0)
+  section   PDISection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  responses PDIResponse[]
+}
+
+// Leakage inspection items (separate from regular checklist)
+model PDILeakageItem {
+  id        String   @id @default(cuid())
+  label     String
+  order     Int      @default(0)
+  responses PDILeakageResponse[]
+}
+
+// --- PDI Inspection Data ---
+
+model PDIInspection {
+  id             String   @id @default(cuid())
+  
+  // Link to the user who performed/owns this inspection
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Link to booking (Optional for now, but good for future)
+  // userPackageId  String?
+  // userPackage    UserPackage? @relation(fields: [userPackageId], references: [id])
+
+  // Vehicle Details
+  vehicleMake    String
+  vehicleModel   String
+  vehicleColor   String
+  vehicleYear    String?
+  vin            String?  // Chassis Number
+  engineNumber   String?
+  odometer       String?
+
+  // Customer Details
+  customerName   String
+  customerEmail  String?
+  customerPhone  String?
+
+  // Inspection Metadata
+  inspectionDate DateTime @default(now())
+  inspectedBy    String?  // Admin name who performed inspection
+  status         String   @default("COMPLETED") // DRAFT, COMPLETED
+  
+  // Additional Inspection Data
+  adminComments      String?  // Admin recommendations and notes
+  vehicleDamageData  String?  // JSON string storing damage markers and locations
+  pdfUrl             String?  // Path to generated PDF report
+  digitalSignature   String?  // Optional: base64 encoded signature image
+  customerSignature  String?  // Optional: customer signature image
+  
+  responses          PDIResponse[]
+  leakageResponses   PDILeakageResponse[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model PDIResponse {
+  id           String        @id @default(cuid())
+  inspectionId String
+  itemId       String
+  status       String        // "PASS", "FAIL", "WARN" (mapped from Y, X, !)
+  notes        String?       // Comments if any
+  
+  inspection   PDIInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  item         PDIItem       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([inspectionId, itemId]) // One response per item per inspection
+}
+
+// Leakage inspection responses - FOUND / NOT FOUND
+model PDILeakageResponse {
+  id           String        @id @default(cuid())
+  inspectionId String
+  leakageItemId String
+  found        Boolean       @default(false) // true = FOUND, false = NOT FOUND
+  notes        String?
+  
+  inspection   PDIInspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  leakageItem  PDILeakageItem @relation(fields: [leakageItemId], references: [id], onDelete: Cascade)
+
+  @@unique([inspectionId, leakageItemId])
+}
+
+model PDIConfirmationRequest {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Vehicle Details
+  vehicleName     String
+  vehicleModel    String
+  location        String
+  preferredDate   DateTime?
+  
+  // Status and Notes
+  status          String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, ISSUES_FOUND
+  notes           String?  // Client notes
+  adminNotes      String?  // Admin internal notes
+  adminMessage    String?  // Message to client shown when status updates
+  
+  // Link to completed PDI inspection
+  pdiInspectionId String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// System-wide settings controlled by admin
+model SystemSettings {
+  id                String   @id @default(cuid())
+  packagesEnabled   Boolean  @default(true)  // When true, package is required for PDI requests
+  autoApproveUsers  Boolean  @default(false) // When true, new users are auto-approved
+  updatedAt         DateTime @updatedAt
+  updatedBy         String?  // Admin user ID who made the last change
+}
+
+// Admin-managed login purposes
+model LoginPurpose {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+}
+
+// OTP verification records
+// Type: EMAIL or MOBILE
+model OTPVerification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // EMAIL or MOBILE
+  code      String   // 6-digit OTP code
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  verifiedAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+// SMTP configuration for email sending
+model SMTPSettings {
+  id         String   @id @default(cuid())
+  host       String
+  port       Int
+  username   String
+  password   String   // Encrypted in production
+  fromEmail  String
+  fromName   String
+  encryption String   @default("TLS") // TLS, SSL, NONE
+  isActive   Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  updatedBy  String?  // Admin user ID who made the last change
+}
+
+// OTP settings to control verification requirements
+model OTPSettings {
+  id               String   @id @default(cuid())
+  emailOTPEnabled  Boolean  @default(true)
+  mobileOTPEnabled Boolean  @default(false)
+  otpExpiryMinutes Int      @default(10)
+  updatedAt        DateTime @updatedAt
+  updatedBy        String?  // Admin user ID who made the last change
+}
+
+// AI/Translation settings - Gemini API for translation features
+model AISettings {
+  id                  String   @id @default(cuid())
+  geminiApiKey        String?  // Google Gemini API key (encrypted in production)
+  translationEnabled  Boolean  @default(true)
+  updatedAt           DateTime @updatedAt
+  updatedBy           String?  // Admin user ID who made the last change
+}
+
+// Header/Navbar settings for dynamic branding and navigation
+model HeaderSettings {
+  id              String   @id @default(cuid())
+  
+  // Branding
+  brandName       String   @default("Detailing")
+  brandNameAccent String   @default("Garage")
+  logoImageUrl    String?  // Path to uploaded logo image
+  useLogo         Boolean  @default(false) // true = use image, false = use text
+  
+  // Colors
+  primaryColor    String   @default("#e8a317") // Brand gold/orange
+  accentColor     String   @default("#ff6b35") // Accent color
+  textColor       String   @default("#6b7080") // Navigation text color
+  
+  // Navigation Links (JSON array)
+  navigationLinks String   @default("[{\"label\":\"Services\",\"href\":\"#services\",\"isExternal\":false},{\"label\":\"PDI\",\"href\":\"/pdi\",\"isExternal\":false},{\"label\":\"How It Works\",\"href\":\"#how-it-works\",\"isExternal\":false},{\"label\":\"About\",\"href\":\"#about\",\"isExternal\":false},{\"label\":\"Contact\",\"href\":\"#contact\",\"isExternal\":false}]")
+  
+  // CTA Buttons
+  loginButtonText     String   @default("Log In")
+  ctaButtonText       String   @default("Get Started")
+  ctaButtonLink       String   @default("/register")
+  dashboardButtonText String   @default("Dashboard")
+  
+  // Site Metadata
+  siteTitle       String   @default("DetailingGarage – Premium Car Care")
+  siteDescription String   @default("All car services in one place. Book repairs, detailing, PDI inspections, and more.")
+  
+  updatedAt       DateTime @updatedAt
+  updatedBy       String?  // Admin user ID who made the last change
+}
+// Role-based permissions
+model RolePermission {
+  id          String   @id @default(cuid())
+  role        String   @unique // ADMIN, CLIENT, DEALER, AGENT
+  permissions String   // JSON stringified array of permission keys
+  updatedAt   DateTime @updatedAt
+}
+
+// Insurance Claim - stores all claim data
+// Status: SUBMITTED, UNDER_REVIEW, PENDING_DOCUMENTS, APPROVED, REJECTED, COMPLETED
+// Source: ONLINE, WALK_IN
+model InsuranceClaim {
+  id                  String   @id @default(cuid())
+  claimNumber         String   @unique // e.g., "CLM-2026-00001"
+  
+  // Linked client
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Claim source
+  source              String   @default("ONLINE") // "ONLINE" or "WALK_IN"
+  createdByAdminId    String?  // Admin who created (for walk-in)
+  
+  // Customer Details (for walk-in without existing user)
+  customerCity        String?
+  
+  // Vehicle Details (expanded)
+  vehicleMake         String
+  vehicleModel        String
+  vehicleVariant      String?
+  vehicleYear         String
+  vehicleType         String?  // Hatchback, Sedan, SUV, etc.
+  fuelType            String?  // Petrol, Diesel, CNG, etc.
+  transmissionType    String?  // Manual, Automatic, etc.
+  vehicleColor        String?
+  registrationNumber  String
+  rcNumber            String?
+  registrationDate    DateTime?
+  usageType           String?  // Personal, Commercial, etc.
+  odometerReading     Int?
+  chassisNumber       String?  // VIN
+  engineNumber        String?
+  
+  // Insurance Policy Details (expanded)
+  policyNumber        String
+  insuranceCompany    String
+  policyType          String?  // Comprehensive, Third Party, etc.
+  policyStartDate     DateTime?
+  policyEndDate       DateTime?
+  policyExpiryDate    DateTime?
+  idvValue            Float?   // Insured Declared Value
+  vehicleConditionBefore String? // Excellent, Good, Fair, Poor
+  previousAccidentHistory String?
+  
+  // Claim Details (expanded)
+  claimType           String   // Accident, Theft, Natural Disaster, Third Party, etc.
+  incidentDate        DateTime?
+  incidentLocation    String?
+  incidentDescription String?
+  damageAreas         String?  // JSON array of damage areas
+  estimatedDamage     Float?
+  
+  // Status & Processing
+  status              String   @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, PENDING_DOCUMENTS, APPROVED, REJECTED, COMPLETED
+  adminNotes          String?  // Internal admin notes (private)
+  adminMessage        String?  // Message to client (public, shown to client)
+  reviewedAt          DateTime?
+  reviewedBy          String?
+  
+  // Generated PDF
+  pdfUrl              String?
+  pdfGeneratedAt      DateTime?
+  
+  // Timestamps
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Related documents
+  documents           InsuranceDocument[]
+  notifications       Notification[]
+}
+
+// Insurance Document - attached files
+// FileType: POLICY, LICENSE, PHOTOS, RC_BOOK, OTHER
+model InsuranceDocument {
+  id          String         @id @default(cuid())
+  claimId     String
+  claim       InsuranceClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileUrl     String
+  fileType    String   // POLICY, LICENSE, PHOTOS, RC_BOOK, OTHER
+  uploadedAt  DateTime @default(now())
+}
+
+// Notification - for dashboard alerts
+// Type: INSURANCE_CLAIM, PDI_REPORT, SYSTEM
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String           // INSURANCE_CLAIM, PDI_REPORT, SYSTEM
+  title       String
+  message     String
+  link        String?
+  isRead      Boolean          @default(false)
+  claimId     String?
+  claim       InsuranceClaim?  @relation(fields: [claimId], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+}
