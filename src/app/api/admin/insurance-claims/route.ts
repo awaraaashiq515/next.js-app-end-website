@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
             transmissionType: body.transmissionType,
             vehicleColor: body.vehicleColor,
             registrationNumber: body.registrationNumber,
+            vin: body.vin,
             rcNumber: body.rcNumber,
             registrationDate: body.registrationDate ? new Date(body.registrationDate) : undefined,
             usageType: body.usageType,
