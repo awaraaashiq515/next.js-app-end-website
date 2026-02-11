@@ -14,6 +14,7 @@ export interface InsuranceClaimInput {
     transmissionType?: string
     vehicleColor?: string
     registrationNumber: string
+    vin?: string
     rcNumber?: string
     registrationDate?: Date
     usageType?: string

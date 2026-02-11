@@ -14,7 +14,6 @@ export async function createPDIRequest(input: CreatePDIRequestInput) {
     const request = await prisma.pDIConfirmationRequest.create({
         data: {
             userId: input.userId,
-            packageId: input.packageId,
             vehicleName: input.vehicleName,
             vehicleModel: input.vehicleModel,
             location: input.location,
