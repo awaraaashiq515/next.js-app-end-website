@@ -135,10 +135,10 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
-        marginTop: 12,
+        marginBottom: 6,
+        marginTop: 8,
         paddingHorizontal: 32,
-        paddingBottom: 8,
+        paddingBottom: 6,
         borderBottomWidth: 2,
         borderBottomColor: C.primary,
     },
@@ -165,7 +165,7 @@ const s = StyleSheet.create({
     statusRow: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: 16,
+        marginBottom: 10,
         paddingHorizontal: 32,
     },
     statusPill: {
@@ -183,7 +183,7 @@ const s = StyleSheet.create({
 
     // ── Section Container ─────────────────────────────────────────────
     section: {
-        marginBottom: 14,
+        marginBottom: 8,
         borderWidth: 1.5,
         borderColor: C.borderMedium,
         borderRadius: 8,
@@ -212,15 +212,15 @@ const s = StyleSheet.create({
         textTransform: 'uppercase',
     },
     sectionBody: {
-        padding: 14,
+        padding: 10,
         backgroundColor: C.white,
     },
 
     // ── Form Fields ───────────────────────────────────────────────────
     fieldRow: {
         flexDirection: 'row',
-        marginBottom: 10,
-        gap: 10,
+        marginBottom: 6,
+        gap: 8,
     },
     fieldCell: {
         flex: 1,
@@ -276,9 +276,9 @@ const s = StyleSheet.create({
         borderWidth: 1,
         borderColor: C.borderLight,
         borderRadius: 6,
-        padding: 12,
+        padding: 8,
         marginTop: 4,
-        minHeight: 50,
+        minHeight: 35,
     },
     textAreaText: {
         fontSize: 9.5,
@@ -293,7 +293,7 @@ const s = StyleSheet.create({
         borderWidth: 1.5,
         borderColor: C.warningBorder,
         borderRadius: 6,
-        padding: 12,
+        padding: 8,
     },
     damageValue: {
         fontSize: 11,
@@ -326,7 +326,8 @@ const s = StyleSheet.create({
     docImage: {
         width: '100%',
         height: 180,
-        objectFit: 'cover',
+        objectFit: 'contain',
+        backgroundColor: C.bgSecondary,
     },
     docImageLabel: {
         padding: 8,
@@ -515,25 +516,21 @@ export function InsuranceClaimTemplate({ data }: { data: InsuranceClaimPDFData }
 
                     {/* ── Vehicle Details ───────────────────────────── */}
                     <Section title="Vehicle Details">
-                        {/* Row 1: Make, Model, Variant, Year - 4 columns like form */}
+                        {/* Row 1: Make/Brand, Model, Model Variant, Manufacturing Year */}
                         <View style={s.fieldRow}>
-                            <Field label="Make & Model" value={`${data.claim.vehicleMake} ${data.claim.vehicleModel}`} />
-                            <Field label="Variant" value={data.claim.vehicleVariant || '-'} />
-                            <Field label="Year" value={data.claim.vehicleYear} isLast />
+                            <Field label="Vehicle Make/Brand" value={data.claim.vehicleMake} />
+                            <Field label="Model" value={data.claim.vehicleModel} />
+                            <Field label="Model Variant" value={data.claim.vehicleVariant || '-'} />
+                            <Field label="Manufacturing Year" value={data.claim.vehicleYear} isLast />
                         </View>
-                        {/* Row 2: Vehicle Type, Fuel Type, Transmission, Color - 4 columns */}
+                        {/* Row 2: Vehicle Type, Fuel Type, Transmission Type, Vehicle Color */}
                         <View style={s.fieldRow}>
                             <Field label="Vehicle Type" value={data.claim.vehicleType || '-'} />
                             <Field label="Fuel Type" value={data.claim.fuelType || '-'} />
-                            <Field label="Transmission" value={data.claim.transmissionType || '-'} />
-                            <Field label="Color" value={data.claim.vehicleColor || '-'} isLast />
+                            <Field label="Transmission Type" value={data.claim.transmissionType || '-'} />
+                            <Field label="Vehicle Color" value={data.claim.vehicleColor || '-'} isLast />
                         </View>
-                        {/* Row 3: Usage Type, Odometer - 2 columns */}
-                        <View style={s.fieldRow}>
-                            <Field label="Usage Type" value={data.claim.usageType || '-'} />
-                            <Field label="Odometer (KM)" value={data.claim.odometerReading?.toString() || '-'} isLast />
-                        </View>
-                        {/* Row 4: Registration Number, RC Number, Registration Date - 3 columns */}
+                        {/* Row 3: Registration Number, RC Number, Registration Date, Usage Type */}
                         <View style={s.fieldRow}>
                             <Field
                                 label="Registration Number"
@@ -541,45 +538,45 @@ export function InsuranceClaimTemplate({ data }: { data: InsuranceClaimPDFData }
                                 isHighlight
                             />
                             <Field label="RC Number" value={data.claim.rcNumber || '-'} />
-                            <Field label="Registration Date" value={formatDate(data.claim.registrationDate)} isLast />
+                            <Field label="Registration Date" value={formatDate(data.claim.registrationDate)} />
+                            <Field label="Usage Type" value={data.claim.usageType || '-'} isLast />
                         </View>
-                        {/* Row 5: Chassis Number, Engine Number - 2 columns */}
+                        {/* Row 4: Odometer Reading, Vehicle Age, Chassis Number (VIN), Engine Number */}
                         <View style={s.fieldRow}>
+                            <Field label="Odometer Reading (KM)" value={data.claim.odometerReading?.toString() || '-'} />
+                            <Field label="Vehicle Age" value={'-'} />
                             <Field label="Chassis Number (VIN)" value={data.claim.chassisNumber || '-'} />
                             <Field label="Engine Number" value={data.claim.engineNumber || '-'} isLast />
                         </View>
                     </Section>
 
-                    {/* ── Insurance Policy Details ──────────────────── */}
-                    <Section title="Insurance Policy Details">
-                        {/* Row 1: Policy Number, Insurance Company, Policy Type - 3 columns */}
+                    {/* ── Insurance Details ─────────────────────────── */}
+                    <Section title="Insurance Details">
+                        {/* Row 1: Insurance Company, Policy Number, Policy Type, Policy Start Date */}
                         <View style={s.fieldRow}>
+                            <Field label="Insurance Company" value={data.claim.insuranceCompany} />
                             <Field
                                 label="Policy Number"
                                 value={data.claim.policyNumber}
                                 isHighlight
                             />
-                            <Field label="Insurance Company" value={data.claim.insuranceCompany} />
-                            <Field label="Policy Type" value={data.claim.policyType || '-'} isLast />
+                            <Field label="Policy Type" value={data.claim.policyType || '-'} />
+                            <Field label="Policy Start Date" value={formatDate(data.claim.policyStartDate)} isLast />
                         </View>
-                        {/* Row 2: Policy Start Date, Policy End Date, Policy Expiry Date - 3 columns */}
+                        {/* Row 2: Policy End Date, Policy Expiry Date, Claim Type, Estimated Claim Amount */}
                         <View style={s.fieldRow}>
-                            <Field label="Policy Start Date" value={formatDate(data.claim.policyStartDate)} />
                             <Field label="Policy End Date" value={formatDate(data.claim.policyEndDate)} />
-                            <Field label="Policy Expiry Date" value={formatDate(data.claim.policyExpiryDate)} isLast />
+                            <Field label="Policy Expiry Date" value={formatDate(data.claim.policyExpiryDate)} />
+                            <Field label="Claim Type" value={data.claim.claimType} />
+                            <Field label="Estimated Claim Amount (₹)" value={formatCurrency(data.claim.estimatedDamage)} isLast isDamage={!!data.claim.estimatedDamage} />
                         </View>
-                        {/* Row 3: IDV Value, Vehicle Condition Before - 2 columns */}
+                        {/* Row 3: IDV, Claim Status, Vehicle Condition Before Accident, Previous Accident History */}
                         <View style={s.fieldRow}>
-                            <Field label="IDV Value" value={formatCurrency(data.claim.idvValue)} />
-                            <Field label="Vehicle Condition Before" value={data.claim.vehicleConditionBefore || '-'} isLast />
+                            <Field label="IDV - Insured Declared Value (₹)" value={formatCurrency(data.claim.idvValue)} />
+                            <Field label="Claim Status" value={data.claim.status.replace(/_/g, ' ')} isHighlight />
+                            <Field label="Vehicle Condition Before Accident" value={data.claim.vehicleConditionBefore || '-'} />
+                            <Field label="Previous Accident History" value={data.claim.previousAccidentHistory || '-'} isLast />
                         </View>
-                        {/* Previous Accident History - Full width */}
-                        {data.claim.previousAccidentHistory && (
-                            <View style={{ marginTop: 4 }}>
-                                <Text style={s.fieldLabel}>Previous Accident History</Text>
-                                <Text style={s.fieldValue}>{data.claim.previousAccidentHistory}</Text>
-                            </View>
-                        )}
                     </Section>
 
                     {/* ── Claim & Incident Details ──────────────────── */}

@@ -29,6 +29,11 @@ export async function generatePDIPDF(inspectionId: string): Promise<string> {
                     include: {
                         leakageItem: true
                     }
+                },
+                images: {
+                    orderBy: {
+                        uploadedAt: 'asc'
+                    }
                 }
             }
         })
@@ -90,6 +95,7 @@ export async function generatePDIPDF(inspectionId: string): Promise<string> {
         console.log('  - Total items:', sections.reduce((sum: number, s: any) => sum + s.items.length, 0))
         console.log('  - Leakage items:', leakageItems.length)
         console.log('  - Damage markers:', damageData?.markers?.length || 0)
+        console.log('  - Vehicle images:', inspection.images?.length || 0)
 
         const reportData: PDIReportData = {
             inspection: {
@@ -113,6 +119,12 @@ export async function generatePDIPDF(inspectionId: string): Promise<string> {
             },
             sections,
             leakageItems,
+            images: (inspection.images || []).map((img: any) => ({
+                id: img.id,
+                category: img.category,
+                imagePath: img.imagePath,
+                fileName: img.fileName
+            })),
             damageData
         }
 

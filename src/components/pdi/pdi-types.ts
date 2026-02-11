@@ -1,5 +1,33 @@
 export type PDIStatus = "PASS" | "FAIL" | "WARN"
 
+// Image Categories for Vehicle Photos
+export type ImageCategory =
+    | 'FRONT_VIEW'
+    | 'REAR_VIEW'
+    | 'LEFT_SIDE'
+    | 'RIGHT_SIDE'
+    | 'INTERIOR'
+    | 'DASHBOARD'
+    | 'ENGINE'
+    | 'BOOT_SPACE'
+    | 'STEPNEY'
+    | 'TYRE_FRONT_LEFT'
+    | 'TYRE_FRONT_RIGHT'
+    | 'TYRE_REAR_LEFT'
+    | 'TYRE_REAR_RIGHT'
+    | 'UNDERBODY'
+    | 'OTHER'
+
+export interface PDIImageData {
+    id?: string
+    category: ImageCategory
+    imagePath: string
+    fileName: string
+    fileSize: number
+    preview?: string
+    tempId?: string // For tracking uploads before save
+}
+
 export interface PDIItem {
     id: string
     label: string
@@ -135,6 +163,12 @@ export interface PDIReportData {
         label: string
         found: boolean
         notes?: string
+    }>
+    images?: Array<{
+        id: string
+        category: string
+        imagePath: string
+        fileName: string
     }>
     damageData?: VehicleDamageData
 }

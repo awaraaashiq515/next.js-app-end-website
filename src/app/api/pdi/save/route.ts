@@ -37,6 +37,15 @@ const submissionSchema = z.object({
         found: z.boolean(),
         notes: z.string().optional()
     })).optional(),
+
+    // Vehicle Images
+    images: z.array(z.object({
+        category: z.string(),
+        imagePath: z.string(),
+        fileName: z.string(),
+        fileSize: z.number()
+    })).optional(),
+
     digitalSignature: z.string().optional(),
     customerSignature: z.string().optional(),
 })
@@ -56,6 +65,8 @@ export async function POST(req: Request) {
 
         const json = await req.json()
         const validated = submissionSchema.parse(json)
+
+        console.log(`📸 Images received: ${validated.images?.length || 0}`)
 
         // Add userId to input if explicitly provided in request, otherwise leave null for auto-lookup
         const input: PDIInspectionInput = {

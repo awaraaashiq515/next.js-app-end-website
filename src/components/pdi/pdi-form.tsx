@@ -4,10 +4,11 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { PDISection, PDIStatus, VehicleDamageData, PDILeakageItem, PDILeakageResponse } from "./pdi-types"
+import { PDISection, PDIStatus, VehicleDamageData, PDILeakageItem, PDILeakageResponse, PDIImageData } from "./pdi-types"
 import { PDISectionComponent } from "./pdi-section"
 import { LeakageInspection } from "./leakage-inspection"
 import { VehicleDamageMarker } from "./vehicle-damage-marker"
+import { VehicleImageUpload } from "./vehicle-image-upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -68,6 +69,7 @@ export function PDIForm({ inspectionId, initialData }: PDIFormProps = {}) {
     const [responses, setResponses] = React.useState<Record<string, { status: PDIStatus; notes: string }>>({})
     const [leakageResponses, setLeakageResponses] = React.useState<Record<string, PDILeakageResponse>>({})
     const [damageData, setDamageData] = React.useState<VehicleDamageData>({ markers: [] })
+    const [vehicleImages, setVehicleImages] = React.useState<PDIImageData[]>([])
     const [clients, setClients] = React.useState<ClientUser[]>([])
     const [loadingClients, setLoadingClients] = React.useState(false)
     const [selectedUserId, setSelectedUserId] = React.useState<string>("")
@@ -139,6 +141,18 @@ export function PDIForm({ inspectionId, initialData }: PDIFormProps = {}) {
                         console.error('Failed to parse damage data')
                     }
                 }
+
+                // Load existing images if in edit mode
+                if (initialData?.images) {
+                    setVehicleImages(initialData.images.map((img: any) => ({
+                        id: img.id,
+                        category: img.category,
+                        imagePath: img.imagePath,
+                        fileName: img.fileName,
+                        fileSize: img.fileSize,
+                        preview: `/${img.imagePath}`
+                    })))
+                }
             } catch (error) {
                 console.error(error)
             } finally {
@@ -197,6 +211,12 @@ export function PDIForm({ inspectionId, initialData }: PDIFormProps = {}) {
                 responses: responsesArray,
                 leakageResponses: leakageArray,
                 vehicleDamageData: JSON.stringify(damageData),
+                images: vehicleImages.map(img => ({
+                    category: img.category,
+                    imagePath: img.imagePath,
+                    fileName: img.fileName,
+                    fileSize: img.fileSize
+                })),
                 userId: selectedUserId || null
             }
 
@@ -635,6 +655,12 @@ export function PDIForm({ inspectionId, initialData }: PDIFormProps = {}) {
                         <VehicleDamageMarker
                             damageData={damageData}
                             onChange={setDamageData}
+                        />
+
+                        {/* Vehicle Images Section */}
+                        <VehicleImageUpload
+                            images={vehicleImages}
+                            onChange={setVehicleImages}
                         />
 
                         {/* Comments / Recommendations Section */}

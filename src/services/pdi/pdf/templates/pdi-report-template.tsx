@@ -558,6 +558,157 @@ export function PDIReportTemplate({ data }: { data: PDIReportData }) {
                     />
                 </View>
             </Page>
+
+            {/* Vehicle Images Page - Separate dedicated page */}
+            {data.images && data.images.length > 0 && (
+                <Page size="A4" style={styles.page}>
+                    {/* Header */}
+                    <Image
+                        src={getBrandingImageBase64('pdi-header.jpg')}
+                        style={{ width: '100%', marginBottom: 8 }}
+                    />
+
+                    {/* Page Title */}
+                    <View style={{
+                        padding: 5,
+                        backgroundColor: COLORS.cyan,
+                        marginBottom: 8
+                    }}>
+                        <Text style={{
+                            fontSize: 9,
+                            fontFamily: 'Helvetica-Bold',
+                            color: COLORS.white,
+                            textAlign: 'center'
+                        }}>
+                            VEHICLE IMAGES — {data.inspection.vehicleMake} {data.inspection.vehicleModel}
+                        </Text>
+                    </View>
+
+                    {/* All images in a flat 2-col grid with category labels */}
+                    {(() => {
+                        const categoryLabels: Record<string, string> = {
+                            'FRONT_VIEW': 'Front View',
+                            'REAR_VIEW': 'Rear View',
+                            'LEFT_SIDE': 'Left Side View',
+                            'RIGHT_SIDE': 'Right Side View',
+                            'INTERIOR': 'Interior',
+                            'DASHBOARD': 'Dashboard',
+                            'ENGINE': 'Engine',
+                            'BOOT_SPACE': 'Boot Space',
+                            'STEPNEY': 'Stepney / Spare Wheel',
+                            'TYRE_FRONT_LEFT': 'Tyre - Front Left',
+                            'TYRE_FRONT_RIGHT': 'Tyre - Front Right',
+                            'TYRE_REAR_LEFT': 'Tyre - Rear Left',
+                            'TYRE_REAR_RIGHT': 'Tyre - Rear Right',
+                            'UNDERBODY': 'Underbody',
+                            'OTHER': 'Other Images'
+                        }
+
+                        return (
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                {data.images.map((img, idx) => {
+                                    try {
+                                        let imagePath = img.imagePath
+                                        if (imagePath.startsWith('/')) imagePath = imagePath.substring(1)
+                                        if (imagePath.startsWith('public/')) imagePath = imagePath.substring(7)
+
+                                        const fullPath = join(process.cwd(), 'public', imagePath)
+                                        const imageBuffer = readFileSync(fullPath)
+                                        const base64 = imageBuffer.toString('base64')
+                                        const ext = img.fileName.split('.').pop()?.toLowerCase()
+                                        const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+                                        const imageData = `data:${mimeType};base64,${base64}`
+
+                                        return (
+                                            <View key={idx} style={{
+                                                width: '48%',
+                                                marginBottom: 6,
+                                                borderWidth: 1,
+                                                borderColor: COLORS.border,
+                                            }} wrap={false}>
+                                                {/* Category Label on top */}
+                                                <View style={{
+                                                    backgroundColor: COLORS.cyan,
+                                                    padding: 3,
+                                                }}>
+                                                    <Text style={{
+                                                        fontSize: 7,
+                                                        fontFamily: 'Helvetica-Bold',
+                                                        color: COLORS.white
+                                                    }}>
+                                                        {categoryLabels[img.category] || img.category}
+                                                    </Text>
+                                                </View>
+                                                {/* Image */}
+                                                <Image
+                                                    src={imageData}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: 120,
+                                                        objectFit: 'cover',
+                                                    }}
+                                                />
+                                                {/* Filename */}
+                                                <View style={{ padding: 2, backgroundColor: COLORS.lightGray }}>
+                                                    <Text style={{ fontSize: 5, color: COLORS.gray, textAlign: 'center' }}>
+                                                        {img.fileName.length > 35 ? img.fileName.substring(0, 32) + '...' : img.fileName}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        )
+                                    } catch (error: any) {
+                                        console.error(`❌ Failed to load image ${img.fileName}:`, error.message)
+                                        return (
+                                            <View key={idx} style={{
+                                                width: '48%',
+                                                marginBottom: 6,
+                                                borderWidth: 1,
+                                                borderColor: COLORS.border,
+                                            }} wrap={false}>
+                                                <View style={{
+                                                    backgroundColor: COLORS.cyan,
+                                                    padding: 3,
+                                                }}>
+                                                    <Text style={{
+                                                        fontSize: 7,
+                                                        fontFamily: 'Helvetica-Bold',
+                                                        color: COLORS.white
+                                                    }}>
+                                                        {categoryLabels[img.category] || img.category}
+                                                    </Text>
+                                                </View>
+                                                <View style={{
+                                                    width: '100%',
+                                                    height: 120,
+                                                    backgroundColor: COLORS.lightGray,
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <Text style={{ fontSize: 7, color: COLORS.gray }}>Image not found</Text>
+                                                    <Text style={{ fontSize: 5, color: COLORS.gray, marginTop: 2 }}>{img.fileName}</Text>
+                                                </View>
+                                            </View>
+                                        )
+                                    }
+                                })}
+                            </View>
+                        )
+                    })()}
+
+                    {/* Footer Image */}
+                    <View style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                    }}>
+                        <Image
+                            src={getBrandingImageBase64('pdi-footer.jpg')}
+                            style={{ width: '100%' }}
+                        />
+                    </View>
+                </Page>
+            )}
         </Document>
     )
 }

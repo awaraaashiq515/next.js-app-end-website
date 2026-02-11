@@ -550,7 +550,7 @@ export async function getInsuranceClaimStats() {
 /**
  * Get user notifications
  */
-export async function getUserNotifications(userId: string, unreadOnly = false) {
+export async function getUserNotifications(userId: string, unreadOnly = false, limit = 50) {
     const where: any = { userId }
     if (unreadOnly) {
         where.isRead = false
@@ -559,7 +559,7 @@ export async function getUserNotifications(userId: string, unreadOnly = false) {
     return await (prisma as any).notification.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        take: 50
+        take: limit
     })
 }
 

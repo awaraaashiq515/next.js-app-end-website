@@ -1,6 +1,9 @@
 import { db as prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { sendWelcomeCredentialsEmail, sendPDIReportEmail } from "@/lib/services/email"
+import { createPDIImagesDirectory } from "@/lib/utils/file-upload.utils"
+import { rename } from "fs/promises"
+import { join } from "path"
 
 // Types for PDI Submission
 export interface PDIResponseInput {
@@ -13,6 +16,13 @@ export interface PDILeakageResponseInput {
     leakageItemId: string
     found: boolean
     notes?: string
+}
+
+export interface PDIImageInput {
+    category: string
+    imagePath: string
+    fileName: string
+    fileSize: number
 }
 
 export interface PDIInspectionInput {
@@ -37,6 +47,7 @@ export interface PDIInspectionInput {
 
     responses: PDIResponseInput[]
     leakageResponses?: PDILeakageResponseInput[]
+    images?: PDIImageInput[]
     digitalSignature?: string
     customerSignature?: string
 }
@@ -192,6 +203,55 @@ export async function createPDIReport(data: PDIInspectionInput) {
             }
         }
 
+        // Handle image uploads - move from temp to permanent location
+        if (data.images && data.images.length > 0) {
+            console.log(`📸 Processing ${data.images.length} images for PDI ${inspection.id}`)
+
+            // Create permanent directory for this PDI
+            const permanentDir = await createPDIImagesDirectory(inspection.id)
+            console.log(`📁 Permanent dir: ${permanentDir}`)
+
+            for (const img of data.images) {
+                try {
+                    // Normalize paths - replace backslashes with forward slashes
+                    let imgPath = img.imagePath.replace(/\\/g, '/')
+
+                    // Remove leading slash if present
+                    if (imgPath.startsWith('/')) {
+                        imgPath = imgPath.substring(1)
+                    }
+
+                    const tempFullPath = join(process.cwd(), 'public', imgPath)
+                    const newRelativePath = `${permanentDir}/${img.fileName}`.replace(/\\/g, '/')
+                    const newFullPath = join(process.cwd(), 'public', newRelativePath)
+
+                    console.log(`📸 Moving: ${tempFullPath} → ${newFullPath}`)
+
+                    // Try to move file, if fails try copy
+                    try {
+                        await rename(tempFullPath, newFullPath)
+                    } catch (moveErr) {
+                        console.log(`⚠️ Rename failed, file may already be in place`)
+                    }
+
+                    // Save image record to database with normalized path
+                    await tx.pDIImage.create({
+                        data: {
+                            inspectionId: inspection.id,
+                            category: img.category,
+                            imagePath: newRelativePath,
+                            fileName: img.fileName,
+                            fileSize: img.fileSize
+                        }
+                    })
+                    console.log(`✅ Saved image: ${img.fileName} (${img.category})`)
+                } catch (err) {
+                    console.error(`❌ Failed to process image ${img.fileName}:`, err)
+                    // Continue with other images even if one fails
+                }
+            }
+        }
+
         if (welcomeEmailData) {
             ; (inspection as any)._welcomeEmail = welcomeEmailData
         }
@@ -249,6 +309,11 @@ export async function getPDIInspection(id: string) {
             leakageResponses: {
                 include: {
                     leakageItem: true
+                }
+            },
+            images: {
+                orderBy: {
+                    uploadedAt: 'asc'
                 }
             },
             user: {
