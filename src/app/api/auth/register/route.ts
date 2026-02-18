@@ -56,6 +56,9 @@ export async function POST(request: Request) {
         // Determine initial user status
         const initialStatus = autoApproveUsers ? "APPROVED" : "PENDING"
 
+        // Forced manual approval for dealers
+        const finalStatus = body.role === "DEALER" ? "PENDING" : initialStatus
+
         // Create user with determined status
         const user = await db.user.create({
             data: {
@@ -65,9 +68,18 @@ export async function POST(request: Request) {
                 password: hashedPassword,
                 role: body.role,
                 purposeOfLoginId: body.purposeOfLoginId,
-                status: initialStatus,
+                status: finalStatus,
                 emailVerified: !emailOTPEnabled, // Auto-verify if OTP disabled
                 mobileVerified: !mobileOTPEnabled,
+
+                // Dealer specific fields
+                dealerBusinessName: body.dealerBusinessName,
+                dealerGstNumber: body.dealerGstNumber,
+                dealerCity: body.dealerCity,
+                dealerState: body.dealerState,
+                dealerBankName: body.dealerBankName,
+                dealerAccountNum: body.dealerAccountNum,
+                dealerIfscCode: body.dealerIfscCode,
             },
         })
 

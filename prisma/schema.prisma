@@ -27,14 +27,143 @@ model User {
   mobileVerified    Boolean       @default(false)
   emailVerifiedAt   DateTime?
   mobileVerifiedAt  DateTime?
+  
+  // Dealer specific fields
+  dealerBusinessName String?
+  dealerGstNumber    String?
+  dealerCity         String?
+  dealerState        String?
+  dealerBankName     String?
+  dealerAccountNum   String?
+  dealerIfscCode     String?
+  
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @default(now()) @updatedAt
   userPackages      UserPackage[]
+  dealerSubscriptions DealerSubscription[]
+  dealerVehicles    DealerVehicle[]
   pdiInspections    PDIInspection[]
   pdiRequests       PDIConfirmationRequest[]
   otpVerifications  OTPVerification[]
   insuranceClaims   InsuranceClaim[]
   notifications     Notification[]
+  inquiries         Inquiry[]
+}
+
+// Dealer subscription packages
+// Type: VEHICLE (add vehicles only), FEATURED (mark as featured only), COMBO (both)
+// Legacy types: BASIC, PREMIUM, ENTERPRISE, CUSTOM (for backward compatibility)
+// Status: ACTIVE, INACTIVE
+model DealerPackage {
+  id                  String   @id @default(cuid())
+  name                String   // "Vehicle Plan", "Featured Plan", "Combo Plan", etc.
+  type                String   // VEHICLE, FEATURED, COMBO, BASIC, PREMIUM, ENTERPRISE, CUSTOM
+  description         String?
+  
+  // Pricing
+  price               Float    // Monthly/yearly price
+  billingCycle        String   @default("MONTHLY") // MONTHLY, YEARLY
+  durationDays        Int      @default(30) // Package duration in days
+  
+  // Capabilities (New fields for plan enforcement)
+  canAddVehicles      Boolean  @default(true) // Can dealer add new vehicles with this plan?
+  canFeatureVehicles  Boolean  @default(false) // Can dealer mark vehicles as featured?
+  
+  // Limits and Features
+  maxVehicles         Int      // Max vehicles dealer can list
+  maxFeaturedCars     Int      @default(0) // Max vehicles that can be featured
+  listingDuration     Int      @default(30) // Days each vehicle stays active
+  allowPriorityListing Boolean @default(false)
+  allowAnalytics      Boolean  @default(true)
+  allowBulkUpload     Boolean  @default(false)
+  
+  // Additional Features (JSON)
+  features            String?  // JSON array: ["Priority Support", "Custom Branding", etc.]
+  
+  // Status
+  status              String   @default("ACTIVE") // ACTIVE, INACTIVE
+  isPopular           Boolean  @default(false) // For highlighting popular plans
+  
+  // Relations
+  subscriptions       DealerSubscription[]
+  payments            Payment[]
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@index([status])
+  @@index([type])
+}
+
+// Dealer Subscriptions
+// Status: ACTIVE, EXPIRED, CANCELLED, PENDING_PAYMENT, PENDING_APPROVAL
+model DealerSubscription {
+  id                String   @id @default(cuid())
+  dealerId          String
+  dealer            User     @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  packageId         String
+  package           DealerPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  
+  startDate         DateTime @default(now())
+  endDate           DateTime
+  status            String   @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED, PENDING_PAYMENT, PENDING_APPROVAL
+  autoRenew         Boolean  @default(true)
+  
+  // Usage tracking (snapshots for current period)
+  vehiclesUsed      Int      @default(0)
+  featuredCarsUsed  Int      @default(0)
+  
+  // Payment link
+  paymentId         String?  @unique
+  payment           Payment? @relation(fields: [paymentId], references: [id])
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([dealerId])
+  @@index([packageId])
+  @@index([status])
+}
+
+// Payment Records
+// Method: UPI, CASH, BANK_TRANSFER, OTHER, PAY_LATER
+// Status: PENDING, PAID, FAILED, REFUNDED
+model Payment {
+  id                String   @id @default(cuid())
+  packageId         String
+  package           DealerPackage @relation(fields: [packageId], references: [id])
+  
+  amount            Float
+  method            String   // UPI, CASH, BANK_TRANSFER, OTHER, PAY_LATER
+  status            String   @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  
+  // Transaction Details
+  transactionId     String?  @unique // UPI UTR or Bank Trans Ref
+  bankName          String?
+  paymentDate       DateTime?
+  
+  // Subscription link
+  subscription      DealerSubscription?
+  
+  // Metadata
+  adminNotes        String?  // For cash approval notes
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([packageId])
+  @@index([status])
+}
+
+// System-wide payment settings for Admin
+model PaymentSettings {
+  id                String   @id @default(cuid())
+  upiId             String?  // UPI ID for payments (e.g. 9876543210@paytm)
+  upiName           String?  // Name associated with UPI ID
+  qrCodePath        String?  // Path to generated QR code image
+  isActive          Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+  updatedBy         String?  // Admin user ID
 }
 
 // Package types: PDI, INSURANCE, SERVICE
@@ -346,7 +475,7 @@ model InsuranceClaim {
   usageType           String?  // Personal, Commercial, etc.
   odometerReading     Int?
   chassisNumber       String?  // VIN
-  engineNumber        String?
+  engineNumber   String?
   
   // Insurance Policy Details (expanded)
   policyNumber        String
@@ -413,4 +542,118 @@ model Notification {
   claimId     String?
   claim       InsuranceClaim?  @relation(fields: [claimId], references: [id], onDelete: SetNull)
   createdAt   DateTime         @default(now())
+}
+
+// Dealer Vehicle Listings
+// Status: DRAFT, ACTIVE, SOLD, INACTIVE
+// VehicleType: CAR, BIKE
+model DealerVehicle {
+  id            String   @id @default(cuid())
+  dealerId      String
+  dealer        User     @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+
+  // Basic Vehicle Details
+  title         String   // e.g. "2019 Maruti Swift VXI"
+  make          String   // Brand: Maruti, Honda, etc.
+  model         String   // Model: Swift, City, etc.
+  year          Int
+  price         Float
+  mileage       Int?     // in km
+  fuelType      String?  // Petrol, Diesel, CNG, Electric, etc.
+  transmission  String?  // Manual, Automatic
+  color         String?
+  vehicleType   String   @default("CAR") // CAR, BIKE
+  engineCC      Int?     // For bikes
+
+  // Ownership & Documents
+  ownerType           String?  // First, Second, etc.
+  registrationNumber  String?
+  insuranceDetails    String?
+
+  // Condition Details (Used Vehicle specific)
+  overallCondition    String?  // Excellent, Good, etc.
+  accidentHistory     String?
+  serviceHistory      String?
+  healthStatus        String?
+  
+  // Professional Specs
+  bodyType            String?  // Sedan, SUV, etc.
+  seatingCapacity     Int?
+  driveType           String?  // FWD, AWD, etc.
+  
+  // Professional Documentation
+  insuranceCompany    String?
+  insuranceExpiry     String?
+  rtoLocation         String?
+  lastServiceDate     String?
+  lastServiceKM       Int?
+  serviceCount        Int?     @default(0)
+  spareKey            String?  @default("Yes")
+  
+  // Professional Condition Metrics (Spinny/Cars24 Style)
+  tyreLife            String?  // e.g., "70-80%"
+  batteryStatus       String?  // e.g., "New", "Good", "Needs Replacement"
+  engineGrade         String?  // A - E
+  transmissionGrade   String?  // A - E
+  exteriorGrade       String?  // A - E
+  interiorGrade       String?  // A - E
+  accidentFree        Boolean  @default(true)
+  floodAffected       Boolean  @default(false)
+
+  // Listing Details
+  description   String?
+  status        String   @default("DRAFT") // DRAFT, ACTIVE, SOLD, INACTIVE
+  isFeatured    Boolean  @default(false)
+  featuredAt    DateTime?
+  
+  // Customization & Extensibility
+  modifications       String?  // JSON array of modifications/upgrades
+  metadata            String?  // JSON for extensible professional specs
+
+  // Media (JSON array for images, standalone for video)
+  images        String?  // JSON: ["/uploads/vehicles/img1.jpg", ...]
+  videoUrl      String?
+
+  // Location
+  city          String?
+  state         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([dealerId])
+  @@index([status])
+  @@index([isFeatured])
+  @@index([vehicleType])
+
+  inquiries     Inquiry[]
+}
+
+// Customer Inquiries for Vehicles
+// Status: PENDING, CONTACTED, CLOSED, SPAM
+model Inquiry {
+  id            String   @id @default(cuid())
+  
+  // Relations
+  vehicleId     String
+  vehicle       DealerVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  dealerId      String
+  dealer        User     @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  
+  // Customer Details
+  customerName  String
+  customerMobile String
+  message       String?
+  
+  // Status Tracking
+  status        String   @default("PENDING") // PENDING, CONTACTED, CLOSED, SPAM
+  adminNotes    String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([dealerId])
+  @@index([vehicleId])
+  @@index([status])
 }

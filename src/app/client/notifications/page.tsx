@@ -10,7 +10,7 @@ export default async function ClientNotificationsPage() {
 
     // Fetch user-specific notifications (e.g., their PDI request status, reports ready)
     const pdiRequests = await db.pDIConfirmationRequest.findMany({
-        where: { userId: user.id },
+        where: { userId: user.userId },
         orderBy: { updatedAt: 'desc' },
         take: 10
     })

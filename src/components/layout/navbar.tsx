@@ -106,7 +106,12 @@ export function Navbar() {
                 {!loading && (
                     user ? (
                         <Link
-                            href={user.role === 'ADMIN' ? '/admin' : '/client'}
+                            href={
+                                user.role === 'ADMIN' ? '/admin' :
+                                    user.role === 'DEALER' ? '/dealer' :
+                                        user.role === 'AGENT' ? '/agent' :
+                                            '/client'
+                            }
                             className="text-black px-5 py-2 rounded-lg text-[13px] font-bold tracking-wide hover:translate-y-[-1px] hover:shadow-[0_6px_22px_rgba(232,163,23,0.4)] transition-all flex items-center gap-2"
                             style={{ backgroundColor: primaryColor }}
                         >

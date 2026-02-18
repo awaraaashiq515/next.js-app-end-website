@@ -1,4 +1,4 @@
-export type PDIStatus = "PASS" | "FAIL" | "WARN"
+export type PDIStatus = "PASS" | "FAIL" | "WARN" | "FOUND" | "NOT_FOUND"
 
 // Image Categories for Vehicle Photos
 export type ImageCategory =

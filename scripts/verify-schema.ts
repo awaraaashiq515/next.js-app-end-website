@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -11,10 +11,6 @@ async function main() {
         console.error('❌ PDIConfirmationRequest model MISSING in Prisma Client.')
         console.error('   This means "npx prisma generate" has not run successfully.')
     }
-
-    // Also verify User relation
-    // We can't easily check types at runtime effectively without TS, but looking for properties on the instance helps.
-    // Actually, properties on the instance don't exist until accessed or dmmf check.
 
     try {
         // @ts-ignore

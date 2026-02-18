@@ -13,9 +13,26 @@ export const registerSchema = z.object({
     confirmPassword: z.string(),
     role: z.enum(["CLIENT", "DEALER", "AGENT"], { message: "Please select a valid role" }),
     purposeOfLoginId: z.string().min(1, { message: "Please select a purpose of login" }),
+
+    // Dealer specific fields
+    dealerBusinessName: z.string().optional(),
+    dealerGstNumber: z.string().optional(),
+    dealerCity: z.string().optional(),
+    dealerState: z.string().optional(),
+    dealerBankName: z.string().optional(),
+    dealerAccountNum: z.string().optional(),
+    dealerIfscCode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
+}).refine((data) => {
+    if (data.role === "DEALER") {
+        return !!data.dealerBusinessName && !!data.dealerGstNumber && !!data.dealerBankName && !!data.dealerAccountNum && !!data.dealerIfscCode && !!data.dealerCity && !!data.dealerState
+    }
+    return true
+}, {
+    message: "All dealer business and bank details (GST, Bank, City, State) are required",
+    path: ["dealerBusinessName"],
 })
 
 export const verifyOTPSchema = z.object({

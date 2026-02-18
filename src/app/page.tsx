@@ -1,8 +1,40 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/layout/navbar"
+import Link from "next/link"
+import { Car, Bike, Wrench, ChevronRight } from "lucide-react"
+
+interface FeaturedVehicle {
+  id: string
+  title: string
+  make: string
+  model: string
+  year: number
+  price: number
+  mileage?: number
+  fuelType?: string
+  transmission?: string
+  color?: string
+  city?: string
+  state?: string
+  images?: string
+  dealer: {
+    name: string
+    dealerBusinessName?: string
+  }
+}
 
 export default function Home() {
+  const [featuredVehicles, setFeaturedVehicles] = useState<FeaturedVehicle[]>([])
+
+  useEffect(() => {
+    fetch("/api/vehicles/featured")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.vehicles) setFeaturedVehicles(data.vehicles) })
+      .catch(() => { })
+  }, [])
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#08090c' }}>
       {/* ════════════════ NAVBAR ════════════════ */}
@@ -152,6 +184,134 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ════════════════ FEATURED USED CARS ════════════════ */}
+      {featuredVehicles.filter(v => (v as any).vehicleType === 'CAR').length > 0 && (
+        <section id="featured-cars" className="py-28 px-6 md:px-14" style={{ background: 'linear-gradient(180deg, #08090c 0%, #111318 100%)' }}>
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <span className="w-8 h-0.5 rounded" style={{ backgroundColor: '#e8a317' }}></span>
+              <span className="text-xs font-semibold tracking-[2.5px] uppercase" style={{ color: '#e8a317' }}>Dealer Listings</span>
+            </div>
+            <h2 className="font-display text-[clamp(38px,5vw,54px)] tracking-[3px] text-white">Featured <span className="text-[#e8a317]">Used Cars</span></h2>
+            <p className="max-w-[520px] mx-auto mt-4 text-[15px] leading-relaxed font-light" style={{ color: '#6b7080' }}>
+              Handpicked quality pre-owned cars from our top-rated verified dealers.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1080px] mx-auto">
+            {featuredVehicles.filter(v => (v as any).vehicleType === 'CAR').map(vehicle => {
+              const imgs = (() => { try { return JSON.parse(vehicle.images || '[]') } catch { return [] } })()
+              const thumb = imgs[0] || null
+              return (
+                <div key={vehicle.id} className="group rounded-3xl overflow-hidden flex flex-col transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)]" style={{ background: '#161921', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  {/* Image */}
+                  <div className="h-56 flex items-center justify-center relative overflow-hidden" style={{ background: '#0e1015' }}>
+                    {thumb ? (
+                      <img src={thumb} alt={vehicle.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    ) : (
+                      <Car className="w-16 h-16 opacity-10" />
+                    )}
+                    <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2" style={{ background: 'rgba(232,163,23,0.15)', color: '#e8a317', backdropFilter: 'blur(10px)', border: '1px solid rgba(232,163,23,0.3)' }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#e8a317] animate-pulse"></span>
+                      Featured
+                    </div>
+                  </div>
+                  {/* Info */}
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-[17px] font-bold text-white line-clamp-1">{vehicle.title}</h3>
+                      <span className="text-[17px] font-black text-[#e8a317]">₹{vehicle.price.toLocaleString('en-IN')}</span>
+                    </div>
+                    <p className="text-[12px] mb-4 flex items-center gap-2 font-medium" style={{ color: '#6b7080' }}>
+                      <span className="w-5 h-5 rounded-md bg-white/5 flex items-center justify-center"><Wrench className="w-3 h-3" /></span>
+                      {vehicle.dealer.dealerBusinessName || vehicle.dealer.name}
+                      {(vehicle.city || vehicle.state) && ` · ${[vehicle.city, vehicle.state].filter(Boolean).join(', ')}`}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {[vehicle.year, vehicle.fuelType, vehicle.transmission, vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : null].filter(Boolean).map((tag, idx) => (
+                        <span key={idx} className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', border: '1px solid rgba(255,255,255,0.05)' }}>{tag}</span>
+                      ))}
+                    </div>
+                    <button className="w-full text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all duration-300 bg-white/5 text-white border border-white/5 hover:bg-white hover:text-black hover:scale-[1.03]">
+                      View Full Details
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-16 text-center">
+            <Link href="/cars" className="inline-flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] text-[#6b7080] hover:text-white transition-all group">
+              Browse All Cars <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ FEATURED USED BIKES ════════════════ */}
+      {featuredVehicles.filter(v => (v as any).vehicleType === 'BIKE').length > 0 && (
+        <section id="featured-bikes" className="py-28 px-6 md:px-14" style={{ background: '#08090c' }}>
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <span className="w-8 h-0.5 rounded" style={{ backgroundColor: '#60a5fa' }}></span>
+              <span className="text-xs font-semibold tracking-[2.5px] uppercase" style={{ color: '#60a5fa' }}>Premium Two-Wheelers</span>
+            </div>
+            <h2 className="font-display text-[clamp(38px,5vw,54px)] tracking-[3px] text-white">Featured <span className="text-[#60a5fa]">Used Bikes</span></h2>
+            <p className="max-w-[520px] mx-auto mt-4 text-[15px] leading-relaxed font-light" style={{ color: '#6b7080' }}>
+              Explore certified used bikes and scooters with detailed history.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[10800px] mx-auto">
+            {featuredVehicles.filter(v => (v as any).vehicleType === 'BIKE').map(vehicle => {
+              const imgs = (() => { try { return JSON.parse(vehicle.images || '[]') } catch { return [] } })()
+              const thumb = imgs[0] || null
+              return (
+                <div key={vehicle.id} className="group rounded-3xl overflow-hidden flex flex-col transition-all duration-500 hover:border-white/20" style={{ background: 'linear-gradient(135deg, #161921 0%, #111318 100%)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {/* Image */}
+                  <div className="h-56 flex items-center justify-center relative overflow-hidden" style={{ background: 'black' }}>
+                    {thumb ? (
+                      <img src={thumb} alt={vehicle.title} className="w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-60" />
+                    ) : (
+                      <Bike className="w-16 h-16 opacity-10" />
+                    )}
+                    <div className="absolute inset-0 bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2" style={{ background: 'rgba(96,165,250,0.15)', color: '#60a5fa', backdropFilter: 'blur(10px)', border: '1px solid rgba(96,165,250,0.3)' }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#60a5fa] animate-pulse"></span>
+                      Verified
+                    </div>
+                  </div>
+                  {/* Info */}
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-[17px] font-bold text-white line-clamp-1">{vehicle.title}</h3>
+                      <span className="text-[17px] font-black text-white">₹{vehicle.price.toLocaleString('en-IN')}</span>
+                    </div>
+                    <p className="text-[12px] mb-4 flex items-center gap-2 font-medium" style={{ color: '#6b7080' }}>
+                      <Wrench className="w-3 h-3" />
+                      {vehicle.dealer.dealerBusinessName || vehicle.dealer.name}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {[vehicle.year, (vehicle as any).engineCC ? `${(vehicle as any).engineCC} CC` : null, vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : null].filter(Boolean).map((tag, idx) => (
+                        <span key={idx} className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg bg-black text-[#444] border border-white/5">{tag}</span>
+                      ))}
+                    </div>
+                    <button className="w-full text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all duration-300 border border-white/5 text-[#888] group-hover:bg-[#60a5fa] group-hover:text-black group-hover:border-[#60a5fa]">
+                      Examine Details
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-16 text-center">
+            <Link href="/bikes" className="inline-flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] text-[#6b7080] hover:text-white transition-all group">
+              Browse All Bikes <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* ════════════════ HOW IT WORKS ════════════════ */}
       <section id="how-it-works" className="py-28 px-6 md:px-14 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111318 0%, #08090c 100%)' }}>

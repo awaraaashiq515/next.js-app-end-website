@@ -46,8 +46,17 @@ export function RegisterForm() {
             confirmPassword: "",
             role: "CLIENT",
             purposeOfLoginId: "",
+            dealerBusinessName: "",
+            dealerGstNumber: "",
+            dealerCity: "",
+            dealerState: "",
+            dealerBankName: "",
+            dealerAccountNum: "",
+            dealerIfscCode: "",
         },
     })
+
+    const role = form.watch("role")
 
     const router = useRouter()
 
@@ -217,6 +226,116 @@ export function RegisterForm() {
                                 </FormItem>
                             )}
                         />
+                        {role === "DEALER" && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-top duration-300">
+                                <div className="p-4 bg-[#e8a317]/5 border border-[#e8a317]/20 rounded-xl mb-2">
+                                    <h3 className="text-sm font-bold text-[#e8a317] uppercase tracking-wider">Dealer Business Details</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="dealerBusinessName"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Business / Agency Name <span className="text-red-500">*</span></FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Super Car Dealers Pvt Ltd" {...field} className="bg-white/5 border-white/10 text-white" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="dealerGstNumber"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>GST Number <span className="text-red-500">*</span></FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="22AAAAA0000A1Z5" {...field} className="bg-white/5 border-white/10 text-white font-mono" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="dealerCity"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>City <span className="text-red-500">*</span></FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Mumbai" {...field} className="bg-white/5 border-white/10 text-white" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="dealerState"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>State <span className="text-red-500">*</span></FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Maharashtra" {...field} className="bg-white/5 border-white/10 text-white" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl my-4">
+                                    <h3 className="text-sm font-bold text-emerald-500 uppercase tracking-wider">Bank Details (For Payouts)</h3>
+                                </div>
+
+                                <FormField
+                                    control={form.control}
+                                    name="dealerBankName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Bank Name <span className="text-red-500">*</span></FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="HDFC Bank" {...field} className="bg-white/5 border-white/10 text-white" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="dealerAccountNum"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Account Number <span className="text-red-500">*</span></FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="000123456789" {...field} className="bg-white/5 border-white/10 text-white font-mono" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="dealerIfscCode"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>IFSC Code <span className="text-red-500">*</span></FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="HDFC0000123" {...field} className="bg-white/5 border-white/10 text-white font-mono" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <FormField
@@ -261,6 +380,6 @@ export function RegisterForm() {
             <CardFooter className="flex justify-center text-sm text-gray-400 pb-8">
                 Already have an account? <a href="/login" className="ml-1 text-[#e8a317] hover:underline font-medium">Sign in</a>
             </CardFooter>
-        </Card>
+        </Card >
     )
 }

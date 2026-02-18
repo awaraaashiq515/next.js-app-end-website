@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle2, ShieldCheck, Mail, Smartphone, ArrowLeft, RefreshCw } from "lucide-react"
+import { CheckCircle2, ShieldCheck, Mail, Smartphone, ArrowLeft, RefreshCw, Loader2 } from "lucide-react"
 
-export default function VerifyOTPPage() {
+function VerifyOTPContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const userId = searchParams.get("userId")
@@ -282,5 +282,17 @@ export default function VerifyOTPPage() {
                 </Card>
             </div>
         </div>
+    )
+}
+
+export default function VerifyOTPPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#08090c] flex items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-[#e8a317]" />
+            </div>
+        }>
+            <VerifyOTPContent />
+        </Suspense>
     )
 }
