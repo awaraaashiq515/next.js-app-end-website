@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { getCurrentUser } from "@/lib/auth/jwt"
+import { randomUUID } from "crypto"
 
 export async function POST(request: NextRequest) {
     try {
@@ -20,18 +22,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Vehicle not found" }, { status: 404 })
         }
 
-        const inquiry = await db.inquiry.create({
-            data: {
-                vehicleId,
-                dealerId: vehicle.dealerId,
-                customerName,
-                customerMobile,
-                message: message || null,
-                status: "PENDING"
+        // Check if client is logged in — link userId if available
+        let userId: string | null = null
+        try {
+            const currentUser = await getCurrentUser()
+            if (currentUser && currentUser.role === "CLIENT") {
+                userId = currentUser.userId
             }
-        })
+        } catch {
+            // Anonymous submission — that's fine
+        }
 
-        return NextResponse.json({ inquiry, message: "Inquiry sent successfully" }, { status: 201 })
+        // Use raw SQL INSERT so we can write userId without needing prisma generate
+        const inquiryId = randomUUID()
+        const now = new Date().toISOString()
+
+        await db.$executeRaw`
+            INSERT INTO "Inquiry" ("id", "vehicleId", "dealerId", "userId", "customerName", "customerMobile", "message", "status", "adminNotes", "createdAt", "updatedAt")
+            VALUES (${inquiryId}, ${vehicleId}, ${vehicle.dealerId}, ${userId}, ${customerName}, ${customerMobile}, ${message || null}, 'PENDING', NULL, ${now}, ${now})
+        `
+
+        return NextResponse.json({ inquiry: { id: inquiryId }, message: "Inquiry sent successfully" }, { status: 201 })
     } catch (error) {
         console.error("POST /api/inquiries error:", error)
         return NextResponse.json({ error: "Failed to send inquiry" }, { status: 500 })

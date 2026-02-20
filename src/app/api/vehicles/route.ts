@@ -10,9 +10,17 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const type = searchParams.get("type") // CAR, BIKE
         const make = searchParams.get("make")
+        const vehicleModel = searchParams.get("model")
         const minPrice = searchParams.get("minPrice")
         const maxPrice = searchParams.get("maxPrice")
         const minYear = searchParams.get("minYear")
+        const maxYear = searchParams.get("maxYear")
+        const fuelType = searchParams.get("fuelType")
+        const transmission = searchParams.get("transmission")
+        const condition = searchParams.get("condition") // "New" or "Used"
+        const city = searchParams.get("city")
+        const minMileage = searchParams.get("minMileage")
+        const maxMileage = searchParams.get("maxMileage")
         const isFeatured = searchParams.get("isFeatured") === "true"
 
         const now = new Date()
@@ -34,8 +42,19 @@ export async function GET(request: NextRequest) {
         }
 
         if (type) where.vehicleType = type
-        if (make) where.make = { contains: make, mode: 'insensitive' }
+        if (make) where.make = { contains: make }
+        if (vehicleModel) where.model = { contains: vehicleModel }
+        if (fuelType) where.fuelType = fuelType
+        if (transmission) where.transmission = transmission
+        if (city) where.city = { contains: city }
         if (isFeatured) where.isFeatured = true
+
+        // Condition: "New" = First owner, "Used" = anything else
+        if (condition === "New") {
+            where.ownerType = "First"
+        } else if (condition === "Used") {
+            where.ownerType = { not: "First" }
+        }
 
         if (minPrice || maxPrice) {
             where.price = {}
@@ -43,8 +62,16 @@ export async function GET(request: NextRequest) {
             if (maxPrice) where.price.lte = parseFloat(maxPrice)
         }
 
-        if (minYear) {
-            where.year = { gte: parseInt(minYear) }
+        if (minYear || maxYear) {
+            where.year = {}
+            if (minYear) where.year.gte = parseInt(minYear)
+            if (maxYear) where.year.lte = parseInt(maxYear)
+        }
+
+        if (minMileage || maxMileage) {
+            where.mileage = {}
+            if (minMileage) where.mileage.gte = parseInt(minMileage)
+            if (maxMileage) where.mileage.lte = parseInt(maxMileage)
         }
 
         const vehicles = await db.dealerVehicle.findMany({

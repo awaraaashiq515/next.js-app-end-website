@@ -5,16 +5,20 @@ import { Navbar } from "@/components/layout/navbar"
 import {
     ChevronLeft, Share2, MapPin, Calendar, Gauge, Fuel, Zap,
     ShieldCheck, Activity, Wrench, CheckCircle2, Phone, MessageSquare,
-    Send, Loader2, Play, Sparkles, Star
+    Send, Loader2, Play, Sparkles, Star, Eye, FileText, Download,
+    Award, Shield, Cog, Droplets, Info
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { WishlistButton } from "@/components/shared/WishlistButton"
+import { EMICalculator } from "@/components/shared/EMICalculator"
 
 export default function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const [vehicle, setVehicle] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [activeImage, setActiveImage] = useState(0)
+    const [currentUser, setCurrentUser] = useState<{ name: string; mobile?: string } | null>(null)
 
     // Inquiry Form State
     const [inquiry, setInquiry] = useState({ name: "", mobile: "", message: "" })
@@ -29,6 +33,21 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
             })
             .catch(err => console.error(err))
             .finally(() => setLoading(false))
+
+        // Auto-detect logged in user
+        fetch("/api/auth/me")
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data?.user && data.user.role === "CLIENT") {
+                    setCurrentUser(data.user)
+                    setInquiry(prev => ({
+                        ...prev,
+                        name: data.user.name || "",
+                        mobile: data.user.mobile || "",
+                    }))
+                }
+            })
+            .catch(() => { })
     }, [id])
 
     const handleInquirySubmit = async (e: React.FormEvent) => {
@@ -54,351 +73,299 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     }
 
     if (loading) return (
-        <div className="min-h-screen bg-[#08090c] flex items-center justify-center">
-            <Loader2 className="w-10 h-10 animate-spin text-[#e8a317]" />
+        <div className="min-h-screen bg-white flex items-center justify-center">
+            <Loader2 className="w-10 h-10 animate-spin text-slate-200" />
         </div>
     )
 
     if (!vehicle) return (
-        <div className="min-h-screen bg-[#08090c] flex items-center justify-center text-white">
-            Vehicle not found
+        <div className="min-h-screen bg-white flex items-center justify-center text-slate-900 font-bold">
+            Asset not found
         </div>
     )
 
     const images = (() => { try { return JSON.parse(vehicle.images || '[]') } catch { return [] } })()
     const metadata = (() => { try { return JSON.parse(vehicle.metadata || '{}') } catch { return {} } })()
-    const safetyFeatures = metadata.safetyFeatures || []
-    const comfortFeatures = metadata.comfortFeatures || []
 
     return (
-        <div className="min-h-screen bg-[#08090c] text-white selection:bg-[#e8a317] selection:text-black">
+        <div className="min-h-screen bg-white text-slate-900 selection:bg-indigo-100">
             <Navbar />
 
-            <div className="max-w-[1400px] mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="max-w-7xl mx-auto px-6 md:px-12 py-12">
 
-                {/* LEFT COLUMN: Media & Details */}
-                <div className="lg:col-span-8 space-y-12">
-
-                    {/* Breadcrumb */}
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#555]">
-                        <Link href="/cars" className="hover:text-white transition-colors">Inventory</Link>
-                        <ChevronLeft className="w-3 h-3 rotate-180" />
-                        <span className="text-[#e8a317]">{vehicle.make} {vehicle.model}</span>
-                    </div>
-
-                    {/* Gallery */}
-                    <div className="space-y-4">
-                        <div className="relative aspect-video bg-black rounded-[2rem] overflow-hidden border border-white/5 shadow-2xl">
-                            {images[activeImage] ? (
-                                <img src={images[activeImage]} alt={vehicle.title} className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[#333]">No Image</div>
-                            )}
-                            <div className="absolute top-6 right-6">
-                                {vehicle.isFeatured && (
-                                    <div className="px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-[#e8a317]/30 text-[#e8a317] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-[#e8a317] animate-pulse"></span>
-                                        Premium Selection
-                                    </div>
-                                )}
-                            </div>
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.4em] text-slate-400 mb-6 px-1">
+                            <Link href="/cars" className="hover:text-indigo-600 transition-colors">Inventory</Link>
+                            <ChevronLeft className="w-3 h-3 rotate-180" />
+                            <span className="text-slate-400">{vehicle.make}</span>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                            {images.map((img: string, idx: number) => (
-                                <button key={idx} onClick={() => setActiveImage(idx)}
-                                    className={`relative w-24 h-16 flex-shrink-0 rounded-xl overflow-hidden border transition-all ${activeImage === idx ? "border-[#e8a317]" : "border-white/10 opacity-60 hover:opacity-100"}`}>
-                                    <img src={img} className="w-full h-full object-cover" />
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 mb-4 leading-none">
+                            {vehicle.title}
+                        </h1>
+                        <p className="text-lg font-medium text-slate-500 italic uppercase tracking-widest">{vehicle.variant || "Executive Limited"}</p>
+                    </div>
+                    <div className="flex flex-col md:items-end gap-6">
+                        <div className="flex items-center gap-6">
+                            <div className="text-left md:text-right">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Retail Price</div>
+                                <div className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter">₹{vehicle.price?.toLocaleString('en-IN')}</div>
+                            </div>
+                            <div className="h-12 w-[1px] bg-slate-100 hidden sm:block"></div>
+                            <div className="flex items-center gap-3">
+                                <WishlistButton vehicleId={vehicle.id} variant="default" className="bg-white border-slate-200 shadow-sm hover:border-indigo-600 transition-all font-bold px-6 py-4" />
+                                <button className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-all shadow-sm">
+                                    <Share2 className="w-5 h-5" />
                                 </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Quick Specs Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                            { icon: Calendar, label: "Year", value: vehicle.year },
-                            { icon: Gauge, label: "Mileage", value: `${vehicle.mileage?.toLocaleString()} km` },
-                            { icon: Fuel, label: "Fuel", value: vehicle.fuelType },
-                            { icon: Zap, label: "Trans", value: vehicle.transmission },
-                        ].map((item, i) => (
-                            <div key={i} className="bg-[#111] p-6 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center gap-3 text-center">
-                                <item.icon className="w-5 h-5 text-[#e8a317]" />
-                                <div>
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-[#555]">{item.label}</div>
-                                    <div className="font-bold text-sm mt-1">{item.value || "N/A"}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Mechanical Pulse (Grading) */}
-                    <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8 md:p-12 overflow-hidden relative group">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <Activity className="w-64 h-64" />
-                        </div>
-                        <div className="flex items-center justify-between mb-8 relative z-10">
-                            <h2 className="text-xl font-black uppercase tracking-widest italic flex items-center gap-3">
-                                <span className="w-8 h-1 bg-[#e8a317]"></span>
-                                Mechanical Pulse
-                            </h2>
-                            <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold tracking-widest uppercase text-[#555]">
-                                Diagnostic Report
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
-                            {[
-                                { label: "Engine", grade: vehicle.engineGrade },
-                                { label: "Transmission", grade: vehicle.transmissionGrade },
-                                { label: "Exterior", grade: vehicle.exteriorGrade },
-                                { label: "Interior", grade: vehicle.interiorGrade },
-                            ].map((g, i) => (
-                                <div key={i} className="flex flex-col items-center">
-                                    <div className="w-20 h-20 rounded-full border-4 border-[#e8a317]/20 flex items-center justify-center text-2xl font-black relative mb-4 shadow-[0_0_30px_rgba(232,163,23,0.1)]">
-                                        {g.grade || "-"}
-                                        <div className="absolute inset-0 rounded-full border-t-4 border-[#e8a317] rotate-45"></div>
-                                    </div>
-                                    <span className="text-xs font-bold uppercase tracking-widest text-[#888]">{g.label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Hardware Health & Safety */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Hardware Pulse */}
-                        <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8">
-                            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#444] mb-6 flex items-center gap-2">
-                                <Zap className="w-4 h-4 text-[#e8a317]" /> Hardware Pulse
-                            </h3>
-                            <div className="space-y-6">
-                                <div>
-                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[#666] mb-2">
-                                        <span>Tyre Life remaining</span>
-                                        <span className="text-white">{vehicle.tyreLife || "N/A"}</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-[#e8a317] rounded-full transition-all duration-1000"
-                                            style={{ width: vehicle.tyreLife?.includes('%') ? vehicle.tyreLife.split('(')[1]?.replace(')', '') : '50%' }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
-                                    <span className="text-xs font-bold text-[#888]">Battery Status</span>
-                                    <span className="px-3 py-1 rounded-lg bg-[#e8a317]/10 text-[#e8a317] text-[10px] font-black uppercase tracking-widest">
-                                        {vehicle.batteryStatus || "Good"}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Safety Integrity */}
-                        <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8">
-                            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#444] mb-6 flex items-center gap-2">
-                                <ShieldCheck className="w-4 h-4 text-[#e8a317]" /> Safety Integrity
-                            </h3>
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className={`flex items-center justify-between p-4 rounded-2xl border ${vehicle.accidentFree ? "bg-green-500/5 border-green-500/10" : "bg-red-500/5 border-red-500/10"}`}>
-                                    <span className="text-xs font-bold text-[#888]">Accident History</span>
-                                    <span className={`text-[10px] font-black uppercase tracking-widest ${vehicle.accidentFree ? "text-green-500" : "text-red-500"}`}>
-                                        {vehicle.accidentFree ? "Accident Free" : "Reported Issues"}
-                                    </span>
-                                </div>
-                                <div className={`flex items-center justify-between p-4 rounded-2xl border ${!vehicle.floodAffected ? "bg-green-500/5 border-green-500/10" : "bg-red-500/5 border-red-500/10"}`}>
-                                    <span className="text-xs font-bold text-[#888]">Flood Damage</span>
-                                    <span className={`text-[10px] font-black uppercase tracking-widest ${!vehicle.floodAffected ? "text-green-500" : "text-red-500"}`}>
-                                        {!vehicle.floodAffected ? "Non-Affected" : "Flood Affected"}
-                                    </span>
-                                </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* Pro Documentation Registry */}
-                    <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8">
-                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#444] mb-8 flex items-center gap-2">
-                            Documentation Registry
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {[
-                                { label: "RTO Location", value: vehicle.rtoLocation, icon: MapPin },
-                                { label: "Spare Key", value: vehicle.spareKey, icon: Zap },
-                                { label: "Last Service", value: vehicle.lastServiceDate ? `${new Date(vehicle.lastServiceDate).toLocaleDateString()} (${vehicle.lastServiceKM} KM)` : "N/A", icon: Wrench },
-                                { label: "Insurance", value: vehicle.insuranceCompany || "N/A", icon: ShieldCheck },
-                                { label: "Ins. Expiry", value: vehicle.insuranceExpiry || "N/A", icon: Calendar },
-                                { label: "Service Count", value: vehicle.serviceCount ? `${vehicle.serviceCount} Records` : "N/A", icon: Activity },
-                            ].map((doc, i) => (
-                                <div key={i} className="flex items-start gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
-                                        <doc.icon className="w-4 h-4 text-[#e8a317]" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#555] mb-1">{doc.label}</p>
-                                        <p className="text-xs font-bold text-white">{doc.value}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Premium Features & Comfort */}
-                    {(safetyFeatures.length > 0 || comfortFeatures.length > 0) && (
-                        <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8">
-                            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#444] mb-8 flex items-center gap-2">
-                                <Sparkles className="w-4 h-4 text-[#e8a317]" /> Premium Features
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {safetyFeatures.length > 0 && (
-                                    <div>
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-[#666] mb-4">Safety</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                            {safetyFeatures.map((f: string, i: number) => (
-                                                <span key={i} className="px-3 py-1.5 rounded-lg bg-green-500/10 text-green-500 text-[10px] font-bold uppercase tracking-widest border border-green-500/20">
-                                                    {f}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {comfortFeatures.length > 0 && (
-                                    <div>
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-[#666] mb-4">Comfort & Luxury</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                            {comfortFeatures.map((f: string, i: number) => (
-                                                <span key={i} className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-500 text-[10px] font-bold uppercase tracking-widest border border-blue-500/20">
-                                                    {f}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Modification Registry */}
-                    {vehicle.modifications && (
-                        <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8">
-                            <h2 className="text-xl font-black uppercase tracking-widest italic mb-8 flex items-center gap-3">
-                                <span className="w-8 h-1 bg-white"></span>
-                                Modification Registry
-                            </h2>
-                            <div className="flex flex-wrap gap-3">
-                                {(() => {
-                                    try {
-                                        const mods = JSON.parse(vehicle.modifications)
-                                        return Array.isArray(mods) && mods.length > 0 ? mods.map((m: string, i: number) => (
-                                            <span key={i} className="px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-white/10 transition-colors">
-                                                <div className="w-2 h-2 rounded-full bg-[#e8a317]"></div>
-                                                {m}
-                                            </span>
-                                        )) : <p className="text-xs text-[#444] font-bold uppercase tracking-widest">No Bespoke Modifications Registered</p>
-                                    } catch { return null }
-                                })()}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Professional Description */}
-                    <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-10">
-                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#444] mb-6">Expert Evaluation</h3>
-                        <p className="text-[#888] leading-[1.8] text-sm font-medium">{vehicle.description || "No expert evaluation provided for this premium listing."}</p>
-                    </div>
-
                 </div>
 
-                {/* RIGHT COLUMN: Action & Inquiry */}
-                <div className="lg:col-span-4 space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
 
-                    {/* Price Card */}
-                    <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#e8a317]/10 blur-[50px] rounded-full"></div>
-                        <h1 className="text-3xl font-bold mb-2">{vehicle.title}</h1>
-                        <p className="text-[#666] text-sm uppercase font-bold tracking-widest mb-8">{vehicle.variant || "Standard Edition"}</p>
+                    {/* Left Side: Media & Details */}
+                    <div className="lg:col-span-8 space-y-12">
 
-                        <div className="text-4xl font-black text-[#e8a317] mb-2">₹{vehicle.price?.toLocaleString('en-IN')}</div>
-                        <p className="text-xs text-[#555] font-bold uppercase tracking-widest mb-8">Ex-Showroom / Fixed Price</p>
+                        {/* Interactive Gallery */}
+                        <div className="space-y-6">
+                            <div className="relative aspect-[16/9] bg-slate-50 rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm">
+                                {images[activeImage] ? (
+                                    <img src={images[activeImage]} alt={vehicle.title} className="w-full h-full object-cover transition-opacity duration-500" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-slate-300 italic">No Media Available</div>
+                                )}
 
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between py-3 border-b border-white/5">
-                                <span className="text-xs font-bold uppercase tracking-widest text-[#666]">Location</span>
-                                <span className="text-sm font-bold">{vehicle.city}, {vehicle.state}</span>
+                                {/* Premium Badges */}
+                                <div className="absolute top-8 left-8 flex flex-col gap-3">
+                                    {vehicle.isFeatured && (
+                                        <div className="px-5 py-2 rounded-xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2.5">
+                                            <Award className="w-4 h-4" /> Premium Selection
+                                        </div>
+                                    )}
+                                    {vehicle.pdiStatus === "Yes" && (
+                                        <div className="px-5 py-2 rounded-xl bg-slate-900 text-white text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-2.5 shadow-xl">
+                                            <ShieldCheck className="w-4 h-4" /> PDI Certified
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between py-3 border-b border-white/5">
-                                <span className="text-xs font-bold uppercase tracking-widest text-[#666]">Ownership</span>
-                                <span className="text-sm font-bold">{vehicle.ownerType || "N/A"}</span>
+
+                            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-2">
+                                {images.map((img: string, idx: number) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveImage(idx)}
+                                        className={`relative w-28 h-20 flex-shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${activeImage === idx ? "border-indigo-600 scale-105 shadow-md" : "border-transparent opacity-50 hover:opacity-100"}`}
+                                    >
+                                        <img src={img} className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
                             </div>
+                        </div>
+
+                        {/* Attribute Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {[
+                                { icon: Calendar, label: "Model Year", value: vehicle.year },
+                                { icon: Gauge, label: "Odometer", value: `${vehicle.mileage?.toLocaleString()} km` },
+                                { icon: Fuel, label: "Fuel Type", value: vehicle.fuelType },
+                                { icon: Cog, label: "Transmission", value: vehicle.transmission },
+                            ].map((item, i) => (
+                                <div key={i} className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-indigo-200 transition-all">
+                                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-5 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
+                                        <item.icon className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                                    </div>
+                                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{item.label}</div>
+                                    <div className="font-bold text-slate-900">{item.value || "N/A"}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Integrity Report */}
+                        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 md:p-14 shadow-sm relative overflow-hidden">
+                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-4 italic uppercase">
+                                        Mechanical Integrity
+                                    </h2>
+                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Certified Diagnostic Report</p>
+                                </div>
+                                <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Certified 2026</div>
+                            </div>
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
+                                {[
+                                    { label: "Engine", grade: vehicle.engineGrade },
+                                    { label: "Transmission", grade: vehicle.transmissionGrade },
+                                    { label: "Exterior", grade: vehicle.exteriorGrade },
+                                    { label: "Interior", grade: vehicle.interiorGrade },
+                                ].map((g, i) => (
+                                    <div key={i} className="flex flex-col items-center">
+                                        <div className="w-24 h-24 rounded-full border-[6px] border-slate-50 flex items-center justify-center text-2xl font-black text-slate-900 relative mb-5">
+                                            {g.grade || "A"}
+                                            <div className="absolute inset-[-6px] rounded-full border-t-[6px] border-indigo-600 rotate-[45deg]"></div>
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{g.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Extended Features */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10">
+                                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-900 mb-8 flex items-center gap-3 italic">
+                                    <Zap className="w-4 h-4 text-indigo-600" /> System Health
+                                </h3>
+                                <div className="space-y-6">
+                                    {[
+                                        { label: "Tyre Life", val: vehicle.tyreLife || "85%" },
+                                        { label: "Insurance", val: vehicle.insuranceStatus || "Valid" },
+                                        { label: "Ownership", val: vehicle.owner || "1st Owner" },
+                                    ].map((s, i) => (
+                                        <div key={i} className="flex items-center justify-between py-4 border-b border-slate-50 last:border-0">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{s.label}</span>
+                                            <span className="text-sm font-bold text-slate-900">{s.val}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10">
+                                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-900 mb-8 flex items-center gap-3 italic">
+                                    <ShieldCheck className="w-4 h-4 text-indigo-600" /> Documentation
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className={`p-5 rounded-2xl flex items-center justify-between border ${vehicle.rcAvailable === "Yes" ? "bg-emerald-50/50 border-emerald-100 text-emerald-900" : "bg-slate-50 border-slate-100 text-slate-400"}`}>
+                                        <div className="flex items-center gap-3">
+                                            <FileText className="w-4 h-4" />
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">RC Status</span>
+                                        </div>
+                                        <span className="text-[10px] font-bold">{vehicle.rcAvailable === "Yes" ? "AVAILABLE" : "PENDING"}</span>
+                                    </div>
+                                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between text-slate-400 opacity-60">
+                                        <div className="flex items-center gap-3">
+                                            <Award className="w-4 h-4" />
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">Service History</span>
+                                        </div>
+                                        <span className="text-[10px] font-bold">DIGITAL</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Functional Modules */}
+                        <div id="calculator-section">
+                            <EMICalculator price={vehicle.price} className="!p-10 md:!p-14 !rounded-[2.5rem]" />
                         </div>
                     </div>
 
-                    {/* Inquiry Form */}
-                    <div className="bg-white text-black rounded-[2.5rem] p-8 shadow-2xl">
-                        <h3 className="text-xl font-black uppercase italic tracking-tighter mb-6">Make an Offer</h3>
+                    {/* Right Side: Action Console */}
+                    <div className="lg:col-span-4 space-y-8">
 
-                        {!sent ? (
-                            <form onSubmit={handleInquirySubmit} className="space-y-4">
-                                <div>
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#666] mb-1.5 block">Your Name</label>
-                                    <input
-                                        type="text" required
-                                        value={inquiry.name} onChange={e => setInquiry({ ...inquiry, name: e.target.value })}
-                                        className="w-full bg-[#f4f4f4] border-0 rounded-xl p-4 font-bold text-sm focus:ring-2 focus:ring-black placeholder:text-[#aaa]"
-                                        placeholder="John Doe"
-                                    />
+                        {/* Summary Sticky */}
+                        <div className="sticky top-12 space-y-8">
+
+                            <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-slate-200/50 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:rotate-12 transition-all duration-700">
+                                    <Sparkles className="w-32 h-32" />
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#666] mb-1.5 block">Mobile Number</label>
-                                    <input
-                                        type="tel" required
-                                        value={inquiry.mobile} onChange={e => setInquiry({ ...inquiry, mobile: e.target.value })}
-                                        className="w-full bg-[#f4f4f4] border-0 rounded-xl p-4 font-bold text-sm focus:ring-2 focus:ring-black placeholder:text-[#aaa]"
-                                        placeholder="+91 98765 43210"
-                                    />
+
+                                <div className="relative z-10">
+                                    <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40 mb-3">Final Offer</div>
+                                    <div className="text-5xl font-black text-white mb-8 tracking-tighter italic">₹{vehicle.price?.toLocaleString('en-IN')}</div>
+
+                                    <div className="space-y-5 mb-10 pb-10 border-b border-white/5">
+                                        <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-white/40">
+                                            <span>Asset ID</span>
+                                            <span className="text-white">#AV-{vehicle.id?.slice(-6).toUpperCase()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-white/40">
+                                            <span>Views</span>
+                                            <span className="text-white flex items-center gap-2"><Eye className="w-3.5 h-3.5" /> {vehicle.views || 0}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <button className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-900/20">
+                                            Book Now
+                                        </button>
+                                        <p className="text-[9px] text-center text-white/30 uppercase tracking-widest font-medium">Terms apply</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#666] mb-1.5 block">Message (Optional)</label>
-                                    <textarea
-                                        value={inquiry.message} onChange={e => setInquiry({ ...inquiry, message: e.target.value })}
-                                        className="w-full bg-[#f4f4f4] border-0 rounded-xl p-4 font-bold text-sm focus:ring-2 focus:ring-black placeholder:text-[#aaa] resize-none"
-                                        rows={3}
-                                        placeholder="I'm interested in this car..."
-                                    />
-                                </div>
-                                <button type="submit" disabled={sending} className="w-full bg-[#e8a317] hover:bg-[#d69615] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-xl shadow-[#e8a317]/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-                                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Send Inquiry</>}
-                                </button>
-                                <p className="text-[10px] text-center text-[#888] font-medium leading-relaxed">
-                                    By clicking send, you agree to share your contact details with the verified dealer.
-                                </p>
-                            </form>
-                        ) : (
-                            <div className="text-center py-12">
-                                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CheckCircle2 className="w-8 h-8" />
-                                </div>
-                                <h4 className="text-xl font-black mb-2">Request Sent!</h4>
-                                <p className="text-sm text-[#666] mb-6">The dealer has been notified and will contact you shortly.</p>
-                                <button onClick={() => setSent(false)} className="text-xs font-bold uppercase underline">Send another</button>
                             </div>
-                        )}
-                    </div>
 
-                    {/* Dealer Info */}
-                    <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8 flex items-center gap-6">
-                        <div className="w-12 h-12 rounded-full bg-[#222] flex items-center justify-center">
-                            <ShieldCheck className="w-6 h-6 text-[#e8a317]" />
-                        </div>
-                        <div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-[#555]">Sold By</div>
-                            <div className="font-bold text-white">{vehicle.dealer?.dealerBusinessName || vehicle.dealer?.name || "Verified Dealer"}</div>
-                            <div className="text-xs text-[#888] flex items-center gap-1 mt-1">
-                                <MapPin className="w-3 h-3" /> {vehicle.dealer?.dealerCity || "Indore"}
+                            {/* Inquiry Console */}
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-sm">
+                                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-900 mb-8 italic">Send Inquiry</h3>
+                                {sent ? (
+                                    <div className="text-center py-10 bg-emerald-50 rounded-3xl border border-emerald-100">
+                                        <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
+                                        <p className="text-[10px] font-bold text-emerald-900 uppercase tracking-widest">Inquiry Sent!</p>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleInquirySubmit} className="space-y-6">
+                                        <div className="space-y-4">
+                                            <input
+                                                required
+                                                placeholder="Your Name"
+                                                value={inquiry.name}
+                                                onChange={e => setInquiry({ ...inquiry, name: e.target.value })}
+                                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm font-medium focus:bg-white focus:border-indigo-600 outline-none transition-all"
+                                            />
+                                            <input
+                                                required
+                                                placeholder="Mobile Number"
+                                                value={inquiry.mobile}
+                                                onChange={e => setInquiry({ ...inquiry, mobile: e.target.value })}
+                                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm font-medium focus:bg-white focus:border-indigo-600 outline-none transition-all"
+                                            />
+                                            <textarea
+                                                placeholder="Message (Optional)..."
+                                                rows={4}
+                                                value={inquiry.message}
+                                                onChange={e => setInquiry({ ...inquiry, message: e.target.value })}
+                                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm font-medium focus:bg-white focus:border-indigo-600 outline-none resize-none transition-all"
+                                            />
+                                        </div>
+                                        <button
+                                            disabled={sending}
+                                            className="w-full py-5 bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-900 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-3"
+                                        >
+                                            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                            Submit Inquiry
+                                        </button>
+                                    </form>
+                                )}
                             </div>
+
+                            {/* Custodian Segment */}
+                            <div className="bg-slate-50/50 border border-slate-100 rounded-[2rem] p-8 flex items-center gap-5">
+                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center border border-slate-100">
+                                    <Award className="w-6 h-6 text-slate-300" />
+                                </div>
+                                <div>
+                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Dealer Info</div>
+                                    <div className="text-sm font-bold text-slate-900 lowercase italic line-clamp-1">{vehicle.dealer?.dealerBusinessName || vehicle.dealer?.name || "Enterprise"}</div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-
                 </div>
             </div>
+
+            {/* Mobile Bottom Bar */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-4 md:hidden z-50 flex gap-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                <button className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px]">
+                    Reserve Now
+                </button>
+                <button className="w-14 h-14 bg-slate-900 text-white border border-slate-900 rounded-2xl flex items-center justify-center">
+                    <Phone className="w-5 h-5" />
+                </button>
+            </div>
+
         </div>
     )
 }

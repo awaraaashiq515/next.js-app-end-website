@@ -16,6 +16,7 @@ import {
     CreditCard,
     Star,
     MessageSquare,
+    Heart,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -36,6 +37,7 @@ const menuGroups: MenuGroup[] = [
         items: [
             { name: "Dashboard", href: "/dealer", icon: LayoutDashboard },
             { name: "Inquiries", href: "/dealer/inquiries", icon: MessageSquare },
+            { name: "My Wishlist", href: "/dealer/wishlist", icon: Heart },
         ]
     },
     {

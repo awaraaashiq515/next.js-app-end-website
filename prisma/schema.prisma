@@ -48,6 +48,8 @@ model User {
   insuranceClaims   InsuranceClaim[]
   notifications     Notification[]
   inquiries         Inquiry[]
+  serviceInquiries  ServiceInquiry[]
+  wishlist          Wishlist[]
 }
 
 // Dealer subscription packages
@@ -589,6 +591,7 @@ model DealerVehicle {
   lastServiceKM       Int?
   serviceCount        Int?     @default(0)
   spareKey            String?  @default("Yes")
+  rcAvailable         String?  @default("No")  // "Yes", "No"
   
   // Professional Condition Metrics (Spinny/Cars24 Style)
   tyreLife            String?  // e.g., "70-80%"
@@ -618,8 +621,15 @@ model DealerVehicle {
   city          String?
   state         String?
 
+  // PDI (Pre-Delivery Inspection) Feature
+  pdiStatus     String?  @default("No") // "Yes", "No"
+  pdiType       String?  // "PDF", "IMAGES"
+  pdiFiles      String?  // JSON array of file paths
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  views         Int      @default(0)
+  isVerified    Boolean  @default(false)
 
   @@index([dealerId])
   @@index([status])
@@ -627,6 +637,7 @@ model DealerVehicle {
   @@index([vehicleType])
 
   inquiries     Inquiry[]
+  wishlistedBy  Wishlist[]
 }
 
 // Customer Inquiries for Vehicles
@@ -640,8 +651,11 @@ model Inquiry {
   
   dealerId      String
   dealer        User     @relation(fields: [dealerId], references: [id], onDelete: Cascade)
-  
-  // Customer Details
+
+  // Logged-in client who submitted (optional – anonymous inquiries have no userId)
+  userId        String?
+
+  // Customer Details (used for anonymous or fallback)
   customerName  String
   customerMobile String
   message       String?
@@ -655,5 +669,79 @@ model Inquiry {
 
   @@index([dealerId])
   @@index([vehicleId])
+  @@index([userId])
   @@index([status])
+
+  messages      InquiryMessage[]
+}
+
+// Chat messages between dealer and customer on a vehicle inquiry
+// SenderType: DEALER, CUSTOMER
+model InquiryMessage {
+  id          String   @id @default(cuid())
+  inquiryId   String
+  inquiry     Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  senderType  String   // DEALER or CUSTOMER
+  senderId    String   // userId of sender (dealer user id, or inquiry's userId)
+  message     String
+  createdAt   DateTime @default(now())
+
+  // Support for quoting/replying
+  replyToId   String?
+  replyTo     InquiryMessage? @relation("InquiryMessageReplies", fields: [replyToId], references: [id])
+  replies     InquiryMessage[] @relation("InquiryMessageReplies")
+
+  @@index([inquiryId])
+}
+
+
+// Service Inquiries – client-to-admin inquiry/support system
+// Status: PENDING, IN_PROCESS, COMPLETED, REJECTED
+model ServiceInquiry {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String        // Brief title / service name
+  description String        // Full inquiry description
+  status      String        @default("PENDING") // PENDING, IN_PROCESS, COMPLETED, REJECTED
+  adminNotes  String?       // Internal admin notes (not shown to client)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  messages    ChatMessage[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Chat messages for a ServiceInquiry
+// SenderType: CLIENT, ADMIN
+model ChatMessage {
+  id         String         @id @default(cuid())
+  inquiryId  String
+  inquiry    ServiceInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  senderType String         // CLIENT or ADMIN
+  senderId   String         // User ID of the sender
+  message    String
+  createdAt  DateTime       @default(now())
+
+  // Support for quoting/replying
+  replyToId  String?
+  replyTo    ChatMessage?   @relation("ChatMessageReplies", fields: [replyToId], references: [id])
+  replies    ChatMessage[]  @relation("ChatMessageReplies")
+
+  @@index([inquiryId])
+}
+
+// User's wishlist for vehicles
+model Wishlist {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleId   String
+  vehicle     DealerVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+
+  @@unique([userId, vehicleId]) // No duplicate entries
+  @@index([userId])
+  @@index([vehicleId])
 }

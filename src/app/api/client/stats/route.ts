@@ -34,6 +34,20 @@ export async function GET() {
             }
         })
 
+        // Count vehicle inquiries (Raw SQL due to type lag)
+        const vehicleResults = await db.$queryRaw<any[]>`
+            SELECT COUNT(*) as count FROM Inquiry WHERE userId = ${user.userId}
+        `
+        const vehicleInquiriesCount = Number(vehicleResults[0]?.count || 0)
+
+        // Count service inquiries (Raw SQL due to type lag)
+        const serviceResults = await db.$queryRaw<any[]>`
+            SELECT COUNT(*) as count FROM ServiceInquiry WHERE userId = ${user.userId}
+        `
+        const serviceInquiriesCount = Number(serviceResults[0]?.count || 0)
+
+        const totalInquiries = vehicleInquiriesCount + serviceInquiriesCount
+
         // In a real app, we'd have an Appointment model
         const appointmentsCount = 0
 
@@ -42,6 +56,7 @@ export async function GET() {
                 { label: "Active Packages", value: activePackagesCount.toString() },
                 { label: "PDI Balance", value: totalPdiRemaining.toString() },
                 { label: "Total Inspections", value: inspectionsCount.toString() },
+                { label: "Total Inquiries", value: totalInquiries.toString() },
                 { label: "Appointments", value: appointmentsCount.toString() }
             ]
         })

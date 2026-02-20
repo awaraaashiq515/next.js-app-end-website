@@ -10,6 +10,7 @@ import {
     ArrowRight, Info
 } from "lucide-react"
 import Link from "next/link"
+import { PDIUploadSection } from "@/components/dealer/vehicles/PDIUploadSection"
 
 const FUEL_TYPES = ["Petrol", "Diesel", "CNG", "Electric", "Hybrid"]
 const TRANSMISSIONS = ["Manual", "Automatic"]
@@ -94,12 +95,17 @@ export default function EditVehiclePage({ params: paramsPromise }: { params: Pro
         accidentFree: true,
         floodAffected: false,
         videoUrl: "",
+        // PDI Fields
+        pdiStatus: "No",
+        pdiType: null,
+        rcAvailable: "No",
     })
 
     const [images, setImages] = useState<string[]>([])
     const [modifications, setModifications] = useState<string[]>([])
     const [safetyFeatures, setSafetyFeatures] = useState<string[]>([])
     const [comfortFeatures, setComfortFeatures] = useState<string[]>([])
+    const [pdiFiles, setPdiFiles] = useState<string[]>([])
     const [newMod, setNewMod] = useState("")
 
     useEffect(() => {
@@ -128,7 +134,7 @@ export default function EditVehiclePage({ params: paramsPromise }: { params: Pro
                     // but assuming they are not in schema as pure arrays yet, we might need to check how they were saved.
                     // The Add page logic saved them as separate JSON updates?
                     // Re-checking Add Page: It sends `safetyFeatures` and `comfortFeatures` to API. 
-                    // API `POST` saves them... WAIT. The API `POST` destructures them but doesn't seem to save them to specific columns?
+                    // API `POST` saves them... WAIT. The API `POST` destructures them but doesn't seem to map them to specific columns?
                     // Ah, the API `POST` (viewed earlier) had: `const { ... safetyFeatures, comfortFeatures ... } = body`.
                     // But `db.dealerVehicle.create` didn't seem to map them to specific columns unless they are in `metadata`?
                     // Let's check schema again. `metadata` is a string. `modifications` is a string.
@@ -141,6 +147,7 @@ export default function EditVehiclePage({ params: paramsPromise }: { params: Pro
                     const meta = parseJSON(vehicle.metadata, {})
                     if (meta.safetyFeatures) setSafetyFeatures(meta.safetyFeatures)
                     if (meta.comfortFeatures) setComfortFeatures(meta.comfortFeatures)
+                    setPdiFiles(parseJSON(vehicle.pdiFiles, []))
 
                     setForm({
                         vehicleType: vehicle.vehicleType || "CAR",
@@ -188,6 +195,10 @@ export default function EditVehiclePage({ params: paramsPromise }: { params: Pro
                         accidentHistory: vehicle.accidentHistory || "",
                         serviceHistory: vehicle.serviceHistory || "",
                         healthStatus: vehicle.healthStatus || "",
+                        // PDI Fields
+                        pdiStatus: vehicle.pdiStatus || "No",
+                        pdiType: vehicle.pdiType || null,
+                        rcAvailable: vehicle.rcAvailable || "No",
                     })
                 }
                 if (capRes.ok) {
@@ -251,7 +262,10 @@ export default function EditVehiclePage({ params: paramsPromise }: { params: Pro
                     seatingCapacity: form.seatingCapacity ? parseInt(form.seatingCapacity) : null,
                     modifications: JSON.stringify(modifications),
                     images: JSON.stringify(images),
-                    metadata: JSON.stringify(metadata) // Save extended specs in metadata if DB columns missing
+                    metadata: JSON.stringify(metadata),
+                    pdiStatus: form.pdiStatus,
+                    pdiType: form.pdiType,
+                    pdiFiles: JSON.stringify(pdiFiles),
                 }),
             })
             const data = await res.json()
@@ -514,6 +528,20 @@ export default function EditVehiclePage({ params: paramsPromise }: { params: Pro
                                     className={`px-6 py-3 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${form.floodAffected ? "bg-red-50 border-red-200 text-red-600" : "bg-white border-slate-200 text-slate-400"}`}>
                                     <Zap className="w-4 h-4" /> Flood Affected
                                 </button>
+                            </div>
+
+                            {/* PDI SECTION */}
+                            <div className="mt-8 pt-8 border-t border-slate-100">
+                                <PDIUploadSection
+                                    pdiStatus={form.pdiStatus}
+                                    pdiType={form.pdiType}
+                                    pdiFiles={pdiFiles}
+                                    onChange={(data: { pdiStatus?: string, pdiType?: string | null, pdiFiles?: string[] }) => {
+                                        if (data.pdiStatus !== undefined) set("pdiStatus", data.pdiStatus)
+                                        if (data.pdiType !== undefined) set("pdiType", data.pdiType)
+                                        if (data.pdiFiles !== undefined) setPdiFiles(data.pdiFiles)
+                                    }}
+                                />
                             </div>
                         </div>
                     </section>

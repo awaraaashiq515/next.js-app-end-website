@@ -37,6 +37,7 @@ import {
     Battery
 } from "lucide-react"
 import Link from "next/link"
+import { PDIUploadSection } from "@/components/dealer/vehicles/PDIUploadSection"
 
 const CAR_BRANDS = {
     "Maruti Suzuki": ["Alto", "Swift", "Baleno", "Brezza", "Ertiga", "Dzire"],
@@ -132,6 +133,7 @@ export default function AddVehiclePage() {
         rtoLocation: "",
         lastServiceDate: "",
         spareKey: "Yes",
+        rcAvailable: "No",
         // Elite Pre-Owned Metrics
         lastServiceKM: "",
         serviceCount: "0",
@@ -144,6 +146,10 @@ export default function AddVehiclePage() {
         accidentFree: true,
         floodAffected: false,
         modifications: [] as string[],
+        // PDI Fields
+        pdiStatus: "No",
+        pdiType: null as string | null,
+        pdiFiles: [] as string[],
     })
 
     const [modifications, setModifications] = useState<string[]>([])
@@ -251,6 +257,9 @@ export default function AddVehiclePage() {
                     safetyFeatures: JSON.stringify(safetyFeatures),
                     comfortFeatures: JSON.stringify(comfortFeatures),
                     images: JSON.stringify(images),
+                    pdiStatus: form.pdiStatus,
+                    pdiType: form.pdiType,
+                    pdiFiles: JSON.stringify(form.pdiFiles),
                 }),
             })
             const data = await res.json()
@@ -286,16 +295,16 @@ export default function AddVehiclePage() {
     }
 
     const steps = [
-        { id: 1, title: "Identity", icon: FileText, desc: "Brand & Model" },
-        { id: 2, title: "Condition", icon: Activity, desc: "Health & Logs" },
-        { id: 3, title: "Pricing", icon: IndianRupee, desc: "Cost & Story" },
-        { id: 4, title: "Media", icon: ImageIcon, desc: "Photos & Video" },
-        { id: 5, title: "Registry", icon: Wrench, desc: "Extra Parts" },
-        { id: 6, title: "Features", icon: Sparkles, desc: "Spec Options" },
-        { id: 7, title: "Finalize", icon: MapPin, desc: "Location & Status" },
+        { id: 1, title: "Vehicle Info", icon: FileText, desc: "Brand & Model" },
+        { id: 2, title: "Condition", icon: Activity, desc: "Health & Grades" },
+        { id: 3, title: "Pricing", icon: IndianRupee, desc: "Price & Description" },
+        { id: 4, title: "Photos", icon: ImageIcon, desc: "Images & Video" },
+        { id: 5, title: "Modifications", icon: Wrench, desc: "Upgrades & Parts" },
+        { id: 6, title: "Features", icon: Sparkles, desc: "Safety & Comfort" },
+        { id: 7, title: "Finalize", icon: MapPin, desc: "Location & Publish" },
     ]
 
-    const accentColor = "#0056B3"
+    const accentColor = "#1A2B4A"
     const quality = calculateQuality()
 
     if (loading) {
@@ -333,53 +342,51 @@ export default function AddVehiclePage() {
 
     if (step === 0) {
         return (
-            <div className="min-h-screen bg-[#F8F9FA] selection:bg-blue-100">
-                <div className="max-w-7xl mx-auto py-24 px-8">
-                    <div className="flex items-center justify-between mb-24">
-                        <Link href="/dealer/vehicles" className="inline-flex items-center gap-4 text-slate-400 hover:text-blue-600 font-bold text-xs uppercase tracking-widest transition-all group">
-                            <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" /> Back to Terminal
+            <div className="min-h-screen bg-[#0D1117]">
+                <div className="max-w-5xl mx-auto py-20 px-6">
+                    <div className="flex items-center justify-between mb-14">
+                        <Link href="/dealer/vehicles" className="inline-flex items-center gap-2 text-slate-400 hover:text-white font-semibold text-sm transition-all group">
+                            <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" /> Back to Vehicles
                         </Link>
-                        <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Inventory Status: Secure</span>
+                        <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">New Vehicle Listing</span>
+                    </div>
+
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 bg-[#F0B429]/10 border border-[#F0B429]/20 text-[#F0B429] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+                            <Plus className="w-3.5 h-3.5" /> Add Vehicle
                         </div>
+                        <h1 className="text-5xl font-black text-white tracking-tight mb-4">What type of vehicle?</h1>
+                        <p className="text-slate-400 text-lg max-w-lg mx-auto">Select the vehicle category to begin your professional listing.</p>
                     </div>
 
-                    <div className="text-center mb-24">
-                        <h1 className="text-8xl font-black text-slate-900 tracking-tighter mb-8 leading-[0.9]">
-                            SELECT <span className="text-blue-600 underline decoration-blue-100 decoration-8 underline-offset-8">PROTOCOL</span>
-                        </h1>
-                        <p className="text-slate-500 text-xl font-medium max-w-2xl mx-auto leading-relaxed">Choose your inventory category to initialize the Arctic Professional listing sequence.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                         <button
                             type="button"
                             onClick={() => { setVehicleType("CAR"); setStep(1); }}
-                            className="group relative bg-white border border-slate-100 rounded-[4.5rem] p-20 text-left transition-all duration-700 hover:border-blue-200 hover:shadow-[0_60px_100px_rgba(0,0,0,0.04)]"
+                            className="group relative bg-[#161B27] border border-white/8 rounded-3xl p-10 text-left transition-all duration-300 hover:border-[#F0B429]/50 hover:bg-[#1A2035] hover:shadow-2xl hover:shadow-[#F0B429]/5 hover:-translate-y-1"
                         >
-                            <div className="w-28 h-28 rounded-[3rem] bg-slate-50 border border-slate-100 flex items-center justify-center mb-12 transition-all duration-700 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-3xl">
-                                <Car className="w-12 h-12" />
+                            <div className="w-16 h-16 rounded-2xl bg-[#1A2B4A] border border-white/10 flex items-center justify-center mb-6 transition-all duration-300 group-hover:bg-[#F0B429] group-hover:border-[#F0B429]">
+                                <Car className="w-8 h-8 text-white transition-colors" />
                             </div>
-                            <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter mb-4">Passenger<br />Elite</h2>
-                            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest leading-relaxed">Luxury, Performance, SUV & Sedans</p>
-                            <div className="mt-16 flex items-center gap-3 text-blue-600 text-[11px] font-black uppercase tracking-[0.3em] opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-700">
-                                Start Configuration <ChevronRight className="w-5 h-5" />
+                            <h2 className="text-2xl font-black text-white mb-2">Car</h2>
+                            <p className="text-slate-500 text-sm leading-relaxed">Sedan, SUV, Hatchback, Luxury &amp; more</p>
+                            <div className="mt-6 flex items-center gap-2 text-[#F0B429] text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                Get Started <ChevronRight className="w-4 h-4" />
                             </div>
                         </button>
 
                         <button
                             type="button"
                             onClick={() => { setVehicleType("BIKE"); setStep(1); }}
-                            className="group relative bg-white border border-slate-100 rounded-[4.5rem] p-20 text-left transition-all duration-700 hover:border-blue-200 hover:shadow-[0_60px_100px_rgba(0,0,0,0.04)]"
+                            className="group relative bg-[#161B27] border border-white/8 rounded-3xl p-10 text-left transition-all duration-300 hover:border-[#F0B429]/50 hover:bg-[#1A2035] hover:shadow-2xl hover:shadow-[#F0B429]/5 hover:-translate-y-1"
                         >
-                            <div className="w-28 h-28 rounded-[3rem] bg-slate-50 border border-slate-100 flex items-center justify-center mb-12 transition-all duration-700 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 group-hover:-rotate-3 group-hover:shadow-3xl">
-                                <Bike className="w-12 h-12" />
+                            <div className="w-16 h-16 rounded-2xl bg-[#1A2B4A] border border-white/10 flex items-center justify-center mb-6 transition-all duration-300 group-hover:bg-[#F0B429] group-hover:border-[#F0B429]">
+                                <Bike className="w-8 h-8 text-white transition-colors" />
                             </div>
-                            <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter mb-4">Two-Wheeled<br />Precision</h2>
-                            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest leading-relaxed">Sport, Classic, Scooter & Moped</p>
-                            <div className="mt-16 flex items-center gap-3 text-blue-600 text-[11px] font-black uppercase tracking-[0.3em] opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-700">
-                                Start Configuration <ChevronRight className="w-5 h-5" />
+                            <h2 className="text-2xl font-black text-white mb-2">Bike / Scooter</h2>
+                            <p className="text-slate-500 text-sm leading-relaxed">Sport, Classic, Scooter &amp; Moped</p>
+                            <div className="mt-6 flex items-center gap-2 text-[#F0B429] text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                Get Started <ChevronRight className="w-4 h-4" />
                             </div>
                         </button>
                     </div>
@@ -389,62 +396,101 @@ export default function AddVehiclePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F0F2F5] text-slate-900 selection:bg-blue-100 font-sans">
-            {/* Header / Nav */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-                <div className="max-w-[1600px] mx-auto px-10 py-5 flex items-center justify-between">
-                    <button onClick={prevStep} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold text-[11px] uppercase tracking-wider transition-all">
-                        <ChevronLeft className="w-4 h-4" /> Go Back
-                    </button>
-                    <div className="flex items-center gap-10">
-                        <div className="flex items-center gap-3 px-5 py-2 rounded-xl bg-blue-50 border border-blue-100">
-                            <div className="w-2 h-2 rounded-full bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.4)]"></div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-blue-700">{vehicleType} CHANNEL</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Inventory Status</span>
-                            <div className="w-40 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
-                                <div className="h-full bg-blue-600 transition-all duration-1000 shadow-[0_0_15px_rgba(37,99,235,0.5)]" style={{ width: `${quality}%` }}></div>
+        <div className="min-h-screen bg-[#0D1117] text-slate-900 font-sans">
+            {/* Professional Step-by-Step Header */}
+            <div className="bg-[#111827]/95 backdrop-blur-sm border-b border-white/6 sticky top-0 z-50 shadow-2xl shadow-black/30">
+                <div className="max-w-[1600px] mx-auto px-6 py-0">
+                    {/* Top Row */}
+                    <div className="flex items-center justify-between py-3 border-b border-white/6">
+                        <button onClick={prevStep} className="flex items-center gap-1.5 text-slate-400 hover:text-white font-semibold text-sm transition-all group">
+                            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <span className="px-3 py-1 rounded-full bg-white/8 text-slate-200 text-xs font-bold uppercase tracking-widest border border-white/10">
+                                {vehicleType === "CAR" ? "🚗 Car" : "🏍️ Bike"} Listing
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                    <div className="h-full bg-[#F0B429] transition-all duration-700 rounded-full" style={{ width: `${quality}%` }}></div>
+                                </div>
+                                <span className="text-xs font-bold text-slate-300 tabular-nums">{quality}%</span>
                             </div>
-                            <span className="text-[11px] font-black text-blue-600 tabular-nums">{quality}%</span>
                         </div>
+                    </div>
+
+                    {/* Step Progress Bar */}
+                    <div className="flex items-center py-3 overflow-x-auto scrollbar-none gap-0">
+                        {steps.map((s, idx) => {
+                            const isCompleted = step > s.id
+                            const isCurrent = step === s.id
+                            const StepIcon = s.icon
+                            return (
+                                <div key={s.id} className="flex items-center shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => isCompleted ? setStep(s.id) : undefined}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all ${isCurrent
+                                            ? "bg-[#F0B429] text-[#1A2B4A]"
+                                            : isCompleted
+                                                ? "text-slate-300 hover:bg-white/8 cursor-pointer"
+                                                : "text-slate-600 cursor-default"
+                                            }`}
+                                    >
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${isCurrent ? "bg-[#1A2B4A] text-[#F0B429]" :
+                                            isCompleted ? "bg-[#059669] text-white" :
+                                                "bg-white/10 text-slate-500"
+                                            }`}>
+                                            {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : s.id}
+                                        </div>
+                                        <div className="hidden sm:block text-left">
+                                            <p className={`text-xs font-bold leading-none ${isCurrent ? "text-[#1A2B4A]" : isCompleted ? "text-slate-300" : "text-slate-600"}`}>{s.title}</p>
+                                            <p className={`text-[10px] leading-none mt-0.5 ${isCurrent ? "text-[#1A2B4A]/70" : isCompleted ? "text-slate-500" : "text-slate-700"}`}>{s.desc}</p>
+                                        </div>
+                                    </button>
+                                    {idx < steps.length - 1 && (
+                                        <div className={`w-6 h-px mx-1 shrink-0 ${step > s.id ? "bg-[#059669]/60" : "bg-white/10"}`}></div>
+                                    )}
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
             </div>
 
-            <main className="max-w-[1600px] mx-auto px-10 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <main className="max-w-[1600px] mx-auto px-6 py-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     {/* LEFT: FORM BOX */}
                     <div className="lg:col-span-12 xl:col-span-7">
-                        {/* Header Section */}
-                        <div className="mb-10 pl-2">
-                            <div className="flex items-center gap-3 mb-3">
-                                <span className="text-[11px] font-black tracking-[0.2em] text-blue-600 uppercase">Phase 0{step} / 07</span>
-                                <div className="h-px w-12 bg-blue-200"></div>
+                        {/* Step Header */}
+                        <div className="mb-8">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="text-xs font-bold tracking-widest text-[#F0B429] uppercase">Step {step} of 7</span>
+                                <div className="h-px w-10 bg-[#F0B429]/40"></div>
                             </div>
-                            <h1 className="text-5xl md:text-6xl font-black tracking-tight text-slate-900 uppercase leading-none">
-                                {steps[step - 1].title} <span className="text-slate-400 font-medium">PROTOCOL</span>
+                            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
+                                {steps[step - 1].title}
                             </h1>
+                            <p className="text-slate-500 text-sm mt-1">{steps[step - 1].desc}</p>
                         </div>
 
                         {/* Error Alert */}
                         {error && (
-                            <div className="mb-8 p-6 bg-red-50 border-l-4 border-red-500 rounded-2xl flex items-center gap-4 text-red-700 shadow-sm animate-in fade-in slide-in-from-top-4">
-                                <AlertCircle className="w-6 h-6 shrink-0" />
-                                <p className="text-sm font-bold tracking-wide">{error}</p>
+                            <div className="mb-6 p-5 bg-red-50 border-l-4 border-red-500 rounded-xl flex items-center gap-4 text-red-700">
+                                <AlertCircle className="w-5 h-5 shrink-0" />
+                                <p className="text-sm font-semibold">{error}</p>
                             </div>
                         )}
 
-                        <div className="bg-white rounded-[3rem] p-12 md:p-16 shadow-[0_30px_90px_rgba(0,0,0,0.03)] border border-white">
+                        <div className="bg-white rounded-2xl p-8 md:p-10 shadow-xl border border-white/5">
                             {/* STEP 1: IDENTITY */}
                             {step === 1 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                     <div className="space-y-3">
-                                        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Brand Identity</label>
+                                        <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 ml-1">Make / Brand</label>
                                         <div className="relative">
                                             <Tag className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-10 py-5 text-sm font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none cursor-pointer"
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-14 pr-10 py-4 text-sm font-semibold text-slate-800 focus:bg-white focus:border-[#1A2B4A] focus:ring-2 focus:ring-[#1A2B4A]/10 transition-all outline-none appearance-none cursor-pointer"
                                                 value={form.make}
                                                 onChange={(e) => { setField("make", e.target.value); setField("model", ""); }}
                                             >
@@ -458,7 +504,7 @@ export default function AddVehiclePage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Model Variant</label>
+                                        <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 ml-1">Model</label>
                                         <div className="relative">
                                             <Zap className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select
@@ -477,7 +523,7 @@ export default function AddVehiclePage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Release Vintage</label>
+                                        <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 ml-1">Year</label>
                                         <div className="relative">
                                             <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select
@@ -494,7 +540,7 @@ export default function AddVehiclePage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Odometer (KM)</label>
+                                        <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 ml-1">Odometer (KM)</label>
                                         <div className="relative">
                                             <Gauge className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <input
@@ -508,7 +554,7 @@ export default function AddVehiclePage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Body Architecture</label>
+                                        <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 ml-1">Body Type</label>
                                         <div className="relative">
                                             <Car className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select
@@ -525,7 +571,7 @@ export default function AddVehiclePage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Seating Logistics</label>
+                                        <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 ml-1">Seating Capacity</label>
                                         <div className="relative">
                                             <Eye className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select
@@ -542,7 +588,7 @@ export default function AddVehiclePage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Drive Philosophy</label>
+                                        <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 ml-1">Drive Type</label>
                                         <div className="relative">
                                             <Zap className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select
@@ -560,9 +606,9 @@ export default function AddVehiclePage() {
 
                                     <div className="space-y-6 md:col-span-2 mt-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="h-px shrink-0 w-8 bg-blue-100"></div>
-                                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Mechanical Transmission</label>
-                                            <div className="h-px grow bg-blue-100"></div>
+                                            <div className="h-px shrink-0 w-8 bg-slate-200"></div>
+                                            <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Transmission Type</label>
+                                            <div className="h-px grow bg-slate-200"></div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-6">
                                             {TRANSMISSIONS.map(t => (
@@ -571,14 +617,14 @@ export default function AddVehiclePage() {
                                                     type="button"
                                                     onClick={() => setField("transmission", t)}
                                                     className={`py-8 rounded-[2rem] border-2 transition-all duration-300 flex flex-col items-center gap-3 ${form.transmission === t
-                                                        ? "bg-white border-blue-600 shadow-[0_20px_40px_rgba(37,99,235,0.08)] scale-[1.02]"
-                                                        : "bg-slate-50/50 border-slate-100 text-slate-400 hover:border-slate-300"
+                                                        ? "bg-white border-[#1A2B4A] shadow-lg scale-[1.02]"
+                                                        : "bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300"
                                                         }`}
                                                 >
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${form.transmission === t ? "bg-blue-600 text-white" : "bg-white shadow-sm"}`}>
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${form.transmission === t ? "bg-[#1A2B4A] text-white" : "bg-white border border-slate-100 shadow-sm"}`}>
                                                         <Activity className="w-5 h-5" />
                                                     </div>
-                                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${form.transmission === t ? "text-blue-600" : "text-slate-400"}`}>{t}</span>
+                                                    <span className={`text-[10px] font-bold uppercase tracking-widest ${form.transmission === t ? "text-[#1A2B4A]" : "text-slate-400"}`}>{t}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -592,8 +638,8 @@ export default function AddVehiclePage() {
                                     {/* Grading Matrix */}
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-3">
-                                            <Activity className="w-5 h-5 text-blue-600" />
-                                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Mechanical Grading Matrix</label>
+                                            <Activity className="w-4 h-4 text-[#1A2B4A]" />
+                                            <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Condition Grades</label>
                                         </div>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {[
@@ -611,8 +657,8 @@ export default function AddVehiclePage() {
                                                                 type="button"
                                                                 onClick={() => setField(grade.field, g)}
                                                                 className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${form[grade.field as keyof typeof form] === g
-                                                                    ? "bg-blue-600 text-white scale-110 shadow-lg"
-                                                                    : "bg-white text-slate-400 hover:bg-slate-100"
+                                                                    ? "bg-[#1A2B4A] text-white scale-110 shadow-md"
+                                                                    : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-100"
                                                                     }`}
                                                             >
                                                                 {g}
@@ -628,14 +674,14 @@ export default function AddVehiclePage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-6 bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-                                                    <Zap className="w-4 h-4 text-blue-600" />
+                                                <div className="w-8 h-8 rounded-lg bg-[#1A2B4A]/10 flex items-center justify-center">
+                                                    <Zap className="w-4 h-4 text-[#1A2B4A]" />
                                                 </div>
-                                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Hardware Pulse</h3>
+                                                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-700">Mechanical Health</h3>
                                             </div>
                                             <div className="space-y-4">
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tyre Life Assessment</label>
+                                                    <label className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 ml-1">Tyre Life</label>
                                                     <select
                                                         className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold focus:border-blue-500 transition-all outline-none"
                                                         value={form.tyreLife}
@@ -732,6 +778,20 @@ export default function AddVehiclePage() {
                                                 ))}
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* PDI SECTION */}
+                                    <div className="mt-12 pt-12 border-t border-slate-100">
+                                        <PDIUploadSection
+                                            pdiStatus={form.pdiStatus}
+                                            pdiType={form.pdiType}
+                                            pdiFiles={form.pdiFiles}
+                                            onChange={(data) => {
+                                                if (data.pdiStatus !== undefined) setField("pdiStatus", data.pdiStatus)
+                                                if (data.pdiType !== undefined) setField("pdiType", data.pdiType)
+                                                if (data.pdiFiles !== undefined) setField("pdiFiles", data.pdiFiles)
+                                            }}
+                                        />
                                     </div>
                                 </div>
                             ) : null}
@@ -975,12 +1035,12 @@ export default function AddVehiclePage() {
                                 <div className="space-y-12">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-3">
-                                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Terminal City</label>
+                                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">City</label>
                                             <div className="relative">
                                                 <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-6 py-5 text-sm font-bold focus:bg-white focus:border-blue-500 transition-all outline-none"
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-6 py-5 text-sm font-bold focus:bg-white focus:border-[#1A2B4A] transition-all outline-none"
                                                     placeholder="e.g. Mumbai"
                                                     value={form.city}
                                                     onChange={(e) => setField("city", e.target.value)}
@@ -988,12 +1048,12 @@ export default function AddVehiclePage() {
                                             </div>
                                         </div>
                                         <div className="space-y-3">
-                                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">State Terminal</label>
+                                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">State</label>
                                             <div className="relative">
                                                 <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-6 py-5 text-sm font-bold focus:bg-white focus:border-blue-500 transition-all outline-none"
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-6 py-5 text-sm font-bold focus:bg-white focus:border-[#1A2B4A] transition-all outline-none"
                                                     placeholder="e.g. Maharashtra"
                                                     value={form.state}
                                                     onChange={(e) => setField("state", e.target.value)}
@@ -1004,12 +1064,12 @@ export default function AddVehiclePage() {
 
                                     <div className="space-y-6 pt-8 border-t border-slate-100">
                                         <div className="flex items-center gap-3">
-                                            <FileText className="w-5 h-5 text-blue-600" />
-                                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Documentation Portal</label>
+                                            <FileText className="w-5 h-5 text-[#1A2B4A]" />
+                                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Documents</label>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="space-y-3">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Insurance Underwriter</label>
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Insurance Company</label>
                                                 <input
                                                     type="text"
                                                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:border-blue-500 transition-all outline-none"
@@ -1038,43 +1098,67 @@ export default function AddVehiclePage() {
                                                     onChange={(e) => setField("rtoLocation", e.target.value)}
                                                 />
                                             </div>
+                                            {/* RC Available */}
+                                            <div className="space-y-3 md:col-span-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">RC (Registration Certificate) Available?</label>
+                                                <div className="flex gap-4">
+                                                    {["Yes", "No"].map(opt => (
+                                                        <button
+                                                            key={opt}
+                                                            type="button"
+                                                            onClick={() => setField("rcAvailable", opt)}
+                                                            className={`flex-1 py-5 rounded-2xl border-2 text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 ${form.rcAvailable === opt
+                                                                ? opt === "Yes"
+                                                                    ? "bg-green-50 border-green-500 text-green-700 shadow-lg shadow-green-500/10"
+                                                                    : "bg-red-50 border-red-500 text-red-700 shadow-lg shadow-red-500/10"
+                                                                : "bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300"}`}
+                                                        >
+                                                            <span className={`w-3 h-3 rounded-full ${form.rcAvailable === opt ? (opt === "Yes" ? "bg-green-500" : "bg-red-500") : "bg-slate-300"}`}></span>
+                                                            {opt === "Yes" ? "✓ RC Available" : "✗ RC Not Available"}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <p className="text-[10px] text-slate-400 font-medium ml-1">Indicate whether the original Registration Certificate is available with the vehicle.</p>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
-                                        <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/20 blur-[80px] group-hover:bg-blue-600/30 transition-all"></div>
-                                            <div className="relative z-10 flex items-center justify-between">
-                                                <div className="space-y-2">
-                                                    <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400">Inventory Presence</h4>
-                                                    <p className="text-xl font-bold tracking-tight">Set Live Status</p>
+                                        <div className="bg-[#1A2B4A] rounded-2xl p-8 text-white relative overflow-hidden">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-1">
+                                                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-300">Listing Status</h4>
+                                                    <p className="text-lg font-bold">Set Visibility</p>
                                                 </div>
-                                                <div className="flex gap-3">
+                                                <div className="flex gap-2">
                                                     {["DRAFT", "PUBLISHED"].map(s => (
                                                         <button
                                                             key={s}
                                                             type="button"
                                                             onClick={() => setField("status", s)}
-                                                            className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${form.status === s ? "bg-blue-600 text-white shadow-[0_10px_30px_rgba(37,99,235,0.4)]" : "bg-white/5 border border-white/10 text-white/40 hover:bg-white/10"}`}
+                                                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${form.status === s
+                                                                ? (s === "PUBLISHED" ? "bg-[#059669] text-white shadow-lg" : "bg-white/20 text-white border border-white/30")
+                                                                : "bg-white/5 border border-white/10 text-white/40 hover:bg-white/10"
+                                                                }`}
                                                         >
-                                                            {s}
+                                                            {s === "PUBLISHED" ? "Live" : "Draft"}
                                                         </button>
                                                     ))}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="bg-white border border-slate-200 rounded-[3rem] p-10 flex items-center justify-between group">
-                                            <div className="space-y-2">
-                                                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-600">Premium Promotion</h4>
-                                                <p className="text-xl font-bold tracking-tight text-slate-900">Featured Listing</p>
+                                        <div className="bg-white border border-slate-200 rounded-2xl p-8 flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <h4 className="text-[11px] font-bold uppercase tracking-widest text-[#F0B429]">Featured</h4>
+                                                <p className="text-lg font-bold text-[#1A2B4A]">Featured Listing</p>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => setField("isFeatured", !form.isFeatured)}
-                                                className={`w-20 h-10 rounded-full transition-all relative ${form.isFeatured ? "bg-blue-600" : "bg-slate-100"}`}
+                                                className={`w-16 h-8 rounded-full transition-all relative ${form.isFeatured ? "bg-[#F0B429]" : "bg-slate-100"}`}
                                             >
-                                                <div className={`absolute top-1 w-8 h-8 rounded-full bg-white shadow-lg transition-all ${form.isFeatured ? "left-11" : "left-1"}`}></div>
+                                                <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all ${form.isFeatured ? "left-9" : "left-1"}`}></div>
                                             </button>
                                         </div>
                                     </div>
@@ -1082,36 +1166,36 @@ export default function AddVehiclePage() {
                             ) : null}
 
                             {/* Footer Navigation */}
-                            <div className="mt-16 pt-10 border-t border-slate-100 flex items-center justify-between">
+                            <div className="mt-10 pt-8 border-t border-slate-100 flex items-center justify-between">
                                 <button
                                     type="button"
                                     onClick={prevStep}
-                                    className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-all flex items-center gap-2 group"
+                                    className="px-6 py-3 text-sm font-semibold text-slate-500 hover:text-[#1A2B4A] transition-all flex items-center gap-2 group rounded-xl hover:bg-slate-50"
                                 >
-                                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Previous Stage
+                                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Previous
                                 </button>
 
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3">
                                     {step < 7 ? (
                                         <button
                                             type="button"
                                             onClick={nextStep}
-                                            className="px-12 py-5 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-blue-600 hover:shadow-blue-200 hover:scale-[1.03] active:scale-95 transition-all flex items-center gap-3 group"
+                                            className="px-8 py-3 bg-[#1A2B4A] text-white rounded-xl text-sm font-bold shadow-lg hover:bg-[#253D6A] hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 group"
                                         >
-                                            Next Stage <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                            Continue <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                                         </button>
                                     ) : (
                                         <button
                                             type="button"
                                             onClick={() => handleSubmit()}
                                             disabled={submitting}
-                                            className="px-16 py-6 bg-blue-600 text-white rounded-3xl text-sm font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-slate-900 hover:scale-105 active:scale-95 transition-all flex items-center gap-4 disabled:opacity-50"
+                                            className="px-10 py-3.5 bg-[#059669] text-white rounded-xl text-sm font-bold shadow-lg hover:bg-[#047857] hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
                                         >
                                             {submitting ? (
-                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                <Loader2 className="w-4 h-4 animate-spin" />
                                             ) : (
                                                 <>
-                                                    Deploy Listing <Zap className="w-5 h-5 fill-white" />
+                                                    <CheckCircle2 className="w-4 h-4" /> Publish Listing
                                                 </>
                                             )}
                                         </button>
@@ -1121,18 +1205,17 @@ export default function AddVehiclePage() {
                         </div>
                     </div>
 
-                    {/* RIGHT: LIVE PREVIEW SYSTEM */}
-                    <div className="hidden xl:block xl:col-span-5 sticky top-32 h-[calc(100vh-160px)]">
-                        <div className="space-y-10 pl-6 border-l border-slate-200/50">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shadow-[0_0_10px_rgba(37,99,235,0.5)]"></div>
-                                <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-500">Live Registry Portal</h3>
+                    {/* RIGHT: LIVE PREVIEW */}
+                    <div className="hidden xl:block xl:col-span-5 sticky top-[120px] h-[calc(100vh-140px)] overflow-y-auto">
+                        <div className="space-y-6 pl-6 border-l border-white/10">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-[#059669] animate-pulse"></div>
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Live Preview</h3>
                             </div>
 
-                            <div className="relative group p-2">
-                                <div className="absolute -inset-10 bg-gradient-to-br from-blue-300/10 to-transparent blur-[120px] rounded-full opacity-60"></div>
+                            <div className="relative group">
 
-                                <div className="relative bg-white rounded-[4rem] overflow-hidden shadow-[0_60px_120px_rgba(0,0,0,0.1)] border border-slate-100 transform transition-all duration-700 hover:scale-[1.03]">
+                                <div className="relative bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100 transition-all duration-300 hover:shadow-xl">
                                     {/* Card Image Area */}
                                     <div className="aspect-[16/11] bg-slate-100 relative overflow-hidden flex items-center justify-center">
                                         {images.length > 0 ? (
@@ -1149,135 +1232,131 @@ export default function AddVehiclePage() {
                                             </div>
                                         )}
 
-                                        <div className="absolute top-8 left-8 flex flex-col gap-3">
+                                        <div className="absolute top-4 left-4 flex flex-col gap-2">
                                             {form.isFeatured && (
-                                                <div className="px-5 py-2.5 rounded-2xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-2 border border-blue-500/50">
-                                                    <Star className="w-4 h-4 fill-white" /> Featured
+                                                <div className="px-3 py-1.5 rounded-xl bg-[#F0B429] text-white text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-1.5">
+                                                    <Star className="w-3.5 h-3.5 fill-white" /> Featured
                                                 </div>
                                             )}
-                                            <div className="px-5 py-2.5 rounded-2xl bg-white/20 backdrop-blur-2xl text-white text-[10px] font-black uppercase tracking-widest border border-white/40 shadow-xl">
-                                                Certified Pro
+                                            <div className="px-3 py-1.5 rounded-xl bg-white/20 backdrop-blur text-white text-[10px] font-bold border border-white/40">
+                                                Verified Listing
                                             </div>
                                         </div>
 
-                                        <div className="absolute bottom-10 left-10 right-10 flex items-end justify-between text-white">
-                                            <div className="space-y-1.5 drop-shadow-2xl">
-                                                <span className="text-[13px] font-black uppercase tracking-[0.2em] text-blue-400">{form.make || "Manufacturer"}</span>
-                                                <h4 className="text-4xl font-black uppercase tracking-tighter leading-none">{form.model || "MODEL SERIES"}</h4>
+                                        <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between text-white">
+                                            <div className="space-y-1">
+                                                <span className="text-[11px] font-bold uppercase tracking-widest text-[#F0B429]">{form.make || "Brand"}</span>
+                                                <h4 className="text-3xl font-black uppercase tracking-tight leading-none">{form.model || "Model"}</h4>
                                             </div>
-                                            <div className="text-right space-y-1.5 drop-shadow-2xl">
-                                                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Asking Value</span>
-                                                <h4 className="text-4xl font-black tabular-nums tracking-tighter text-white">
-                                                    {form.price ? `₹${parseFloat(form.price).toLocaleString('en-IN')}` : "₹0.00"}
+                                            <div className="text-right space-y-1">
+                                                <span className="text-[10px] font-semibold text-white/60">Price</span>
+                                                <h4 className="text-2xl font-black tabular-nums text-white">
+                                                    {form.price ? `₹${parseFloat(form.price).toLocaleString('en-IN')}` : "₹—"}
                                                 </h4>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Metadata Grid */}
-                                    <div className="p-10">
-                                        <div className="grid grid-cols-3 gap-8 mb-10 border-b border-slate-100 pb-10">
-                                            <div className="space-y-2.5">
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Vintage</span>
-                                                <p className="text-xl font-black text-slate-900 tracking-tight">{form.year}</p>
+                                    <div className="p-6">
+                                        <div className="grid grid-cols-3 gap-4 mb-6 border-b border-slate-100 pb-6">
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest block">Year</span>
+                                                <p className="text-lg font-black text-[#1A2B4A]">{form.year}</p>
                                             </div>
-                                            <div className="space-y-2.5">
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Usage</span>
-                                                <p className="text-xl font-black text-slate-900 tracking-tight">{form.mileage || "0"} <span className="text-sm">KM</span></p>
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest block">KM</span>
+                                                <p className="text-lg font-black text-[#1A2B4A]">{form.mileage || "0"}</p>
                                             </div>
-                                            <div className="space-y-2.5">
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Energy</span>
-                                                <p className="text-xl font-black text-slate-900 tracking-tight">{form.fuelType}</p>
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest block">Fuel</span>
+                                                <p className="text-lg font-black text-[#1A2B4A]">{form.fuelType}</p>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4 mb-10">
-                                            <div className="px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group/spec">
-                                                <div className="space-y-0.5">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Body Style</span>
-                                                    <p className="text-xs font-black text-slate-900">{form.bodyType}</p>
+                                        <div className="grid grid-cols-2 gap-3 mb-6">
+                                            <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                                                <div>
+                                                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest block">Body</span>
+                                                    <p className="text-xs font-bold text-[#1A2B4A]">{form.bodyType}</p>
                                                 </div>
-                                                <Car className="w-4 h-4 text-blue-600 opacity-40 group-hover/spec:opacity-100 transition-opacity" />
+                                                <Car className="w-4 h-4 text-[#1A2B4A]/40" />
                                             </div>
-                                            <div className="px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group/spec">
-                                                <div className="space-y-0.5">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Configuration</span>
-                                                    <p className="text-xs font-black text-slate-900">{form.seatingCapacity} Seater</p>
+                                            <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                                                <div>
+                                                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest block">Seats</span>
+                                                    <p className="text-xs font-bold text-[#1A2B4A]">{form.seatingCapacity} Seater</p>
                                                 </div>
-                                                <Eye className="w-4 h-4 text-blue-600 opacity-40 group-hover/spec:opacity-100 transition-opacity" />
+                                                <Eye className="w-4 h-4 text-[#1A2B4A]/40" />
                                             </div>
-                                            <div className="px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group/spec">
-                                                <div className="space-y-0.5">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Drive System</span>
-                                                    <p className="text-xs font-black text-slate-900">{form.driveType}</p>
+                                            <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                                                <div>
+                                                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest block">Drive</span>
+                                                    <p className="text-xs font-bold text-[#1A2B4A]">{form.driveType}</p>
                                                 </div>
-                                                <Zap className="w-4 h-4 text-blue-600 opacity-40 group-hover/spec:opacity-100 transition-opacity" />
+                                                <Zap className="w-4 h-4 text-[#1A2B4A]/40" />
                                             </div>
                                             {(form.insuranceCompany || form.rtoLocation) && (
-                                                <div className="px-6 py-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-between group/spec">
-                                                    <div className="space-y-0.5">
-                                                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Docs Registry</span>
-                                                        <p className="text-xs font-black text-blue-700">Verified Pro</p>
+                                                <div className="px-4 py-3 rounded-xl bg-green-50 border border-green-100 flex items-center justify-between">
+                                                    <div>
+                                                        <span className="text-[9px] font-semibold text-green-500 uppercase tracking-widest block">Docs</span>
+                                                        <p className="text-xs font-bold text-green-700">Verified</p>
                                                     </div>
-                                                    <ShieldCheck className="w-4 h-4 text-blue-600" />
+                                                    <ShieldCheck className="w-4 h-4 text-green-600" />
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* Quality Pulse Mini Widget */}
-                                        <div className="mb-10 bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mechanical Pulse</span>
-                                                <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">{form.engineGrade} Grade</span>
+                                        {/* Condition Grades Mini Widget */}
+                                        <div className="mb-6 bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Condition Grades</span>
+                                                <span className="text-[10px] font-bold text-[#1A2B4A] uppercase">{form.engineGrade} Grade</span>
                                             </div>
                                             <div className="flex gap-2">
-                                                {["Engine", "Trans", "Ext", "Int"].map((pulse, i) => (
-                                                    <div key={pulse} className="flex-1 space-y-1.5">
-                                                        <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
+                                                {["Engine", "Trans", "Ext", "Int"].map((pulse) => (
+                                                    <div key={pulse} className="flex-1 space-y-1">
+                                                        <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                                             <div
-                                                                className="h-full bg-blue-600 transition-all duration-1000"
-                                                                style={{ width: form[`${pulse.toLowerCase() === 'trans' ? 'transmission' : pulse.toLowerCase()}Grade` as keyof typeof form] === 'A' ? '100%' : '70%' }}
+                                                                className="h-full bg-[#1A2B4A] transition-all duration-700 rounded-full"
+                                                                style={{ width: form[`${pulse.toLowerCase() === 'trans' ? 'transmission' : pulse.toLowerCase()}Grade` as keyof typeof form] === 'A' ? '100%' : '65%' }}
                                                             ></div>
                                                         </div>
-                                                        <span className="text-[8px] font-black text-slate-400 uppercase block">{pulse}</span>
+                                                        <span className="text-[8px] font-bold text-slate-400 uppercase block text-center">{pulse}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between bg-[#F8F9FB] p-6 rounded-[2rem] border border-slate-200/50 transition-all hover:bg-blue-50 group/loc">
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-sm group-hover/loc:scale-110 transition-transform">
-                                                    <MapPin className="w-6 h-6 text-blue-600" />
+                                        <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                                                    <MapPin className="w-5 h-5 text-[#1A2B4A]" />
                                                 </div>
-                                                <div className="space-y-1 text-left">
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block leading-none">Regional Territory</span>
-                                                    <p className="text-[13px] font-black text-slate-900 uppercase tracking-wider">{form.city || "CITY SITE"}, {form.state || "REGION"}</p>
+                                                <div>
+                                                    <span className="text-[10px] font-semibold text-slate-400 block">Location</span>
+                                                    <p className="text-sm font-bold text-[#1A2B4A]">{form.city || "City"}, {form.state || "State"}</p>
                                                 </div>
-                                            </div>
-                                            <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover/loc:bg-blue-600 group-hover/loc:text-white group-hover/loc:border-blue-600 transition-all">
-                                                <ArrowRight className="w-5 h-5" />
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Pro Tips Widget */}
-                                    <div className="mt-8 p-8 bg-blue-600 rounded-[3rem] text-white shadow-2xl shadow-blue-300 relative overflow-hidden group/tip">
-                                        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl transition-transform duration-1000 group-hover/tip:scale-150"></div>
-                                        <div className="flex gap-6 relative z-10">
-                                            <div className="w-14 h-14 rounded-[1.2rem] bg-white/20 backdrop-blur-xl flex items-center justify-center shrink-0 border border-white/25 shadow-xl">
-                                                <Info className="w-7 h-7" />
+                                    {/* Pro Tips */}
+                                    <div className="mt-6 p-5 bg-amber-50 border border-amber-200 rounded-2xl">
+                                        <div className="flex gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-[#F0B429] flex items-center justify-center shrink-0">
+                                                <Info className="w-5 h-5 text-white" />
                                             </div>
-                                            <div className="space-y-1.5 text-left">
-                                                <h5 className="text-[11px] font-black uppercase tracking-[0.25em] text-white">Arctic Intelligence Protocol</h5>
-                                                <p className="text-[14px] font-semibold leading-relaxed text-blue-50">
-                                                    {step === 1 && "Precision matters. Verified configurations receive 4x more engagement from serious buyers."}
-                                                    {step === 2 && "Transparency builds trust. Listings with mechanical details sell significantly faster."}
-                                                    {step === 3 && "Pricing science suggests that figures ending in .99 attract 60% more clicks."}
-                                                    {step === 4 && "Visual quality is the primary trust factor. Ensure your cover photo is well-lit and professional."}
-                                                    {step === 5 && "Modifications can add value. Ensure you list all high-end parts accurately."}
-                                                    {step === 6 && "Tech selling points. Highlight safety and premium infotainment to attract elite buyers."}
-                                                    {step === 7 && "Deployment check. Featured placement grants your listing top-tier visibility in the Arctic feed."}
+                                            <div>
+                                                <h5 className="text-xs font-bold uppercase tracking-widest text-amber-700 mb-1">Pro Tip</h5>
+                                                <p className="text-sm text-amber-800 leading-relaxed">
+                                                    {step === 1 && "Verified configurations get 4× more buyer engagement."}
+                                                    {step === 2 && "Detailed condition info builds buyer trust and sells faster."}
+                                                    {step === 3 && "Competitive pricing and a clear description drive more inquiries."}
+                                                    {step === 4 && "Clear, well-lit photos are the #1 trust factor for buyers."}
+                                                    {step === 5 && "Listing modifications accurately can justify a higher price."}
+                                                    {step === 6 && "Highlighting safety & comfort features attracts serious buyers."}
+                                                    {step === 7 && "Featured listings get priority placement and more visibility."}
                                                 </p>
                                             </div>
                                         </div>

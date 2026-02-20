@@ -17,6 +17,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Bell,
+    MessageSquare,
+    Heart,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -36,6 +38,7 @@ const menuGroups: MenuGroup[] = [
         label: "Overview",
         items: [
             { name: "Dashboard", href: "/client", icon: LayoutDashboard },
+            { name: "My Wishlist", href: "/client/wishlist", icon: Heart },
         ]
     },
     {
@@ -45,6 +48,7 @@ const menuGroups: MenuGroup[] = [
             { name: "My Requests", href: "/client/my-requests", icon: Send },
             { name: "Insurance Claims", href: "/client/insurance-claims", icon: Shield },
             { name: "PDI Requests", href: "/client/requests", icon: FileText },
+            { name: "My Inquiries", href: "/client/inquiries", icon: MessageSquare },
         ]
     },
     {

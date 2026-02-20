@@ -19,6 +19,8 @@ import {
     CreditCard,
     Bell,
     ChevronRight,
+    MessageSquare,
+    Trash2,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -58,6 +60,10 @@ const menuGroups: MenuGroup[] = [
             { name: "PDI Inspections", href: "/admin/pdi", icon: Shield },
             { name: "Insurance Requests", href: "/admin/insurance-requests", icon: FileText },
             { name: "Insurance", href: "/admin/insurance", icon: Shield },
+            { name: "Vehicle Inquiries", href: "/admin/vehicle-inquiries", icon: Car },
+            { name: "Service Inquiries", href: "/admin/service-inquiries", icon: MessageSquare },
+            { name: "Scrap Cars", href: "/admin/scrap-cars", icon: Trash2 },
+
         ]
     },
     {

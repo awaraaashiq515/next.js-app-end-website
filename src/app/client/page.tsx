@@ -49,6 +49,7 @@ export default function ClientDashboard() {
                         "Active Packages": { icon: Package, color: "#e8a317", bgColor: "rgba(232, 163, 23, 0.1)" },
                         "PDI Balance": { icon: TrendingUp, color: "#c084fc", bgColor: "rgba(192, 132, 252, 0.1)" },
                         "Total Inspections": { icon: ClipboardCheck, color: "#4ade80", bgColor: "rgba(74, 222, 128, 0.1)" },
+                        "Total Inquiries": { icon: MessageSquare, color: "#f472b6", bgColor: "rgba(244, 114, 182, 0.1)" },
                         "Appointments": { icon: Calendar, color: "#60a5fa", bgColor: "rgba(96, 165, 250, 0.1)" }
                     }
 

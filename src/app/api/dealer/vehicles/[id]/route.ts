@@ -129,6 +129,16 @@ export async function PATCH(
         if (rest.insuranceExpiry) updateData.insuranceExpiry = rest.insuranceExpiry
         if (rest.rtoLocation) updateData.rtoLocation = rest.rtoLocation
 
+        // PDI Fields
+        if (rest.pdiStatus) updateData.pdiStatus = rest.pdiStatus
+        if (rest.pdiType) updateData.pdiType = rest.pdiType
+        if (rest.pdiFiles) {
+            updateData.pdiFiles = typeof rest.pdiFiles === 'string' ? rest.pdiFiles : JSON.stringify(rest.pdiFiles)
+        }
+
+        // RC Available
+        if (rest.rcAvailable !== undefined) updateData.rcAvailable = rest.rcAvailable
+
         const updated = await db.dealerVehicle.update({
             where: { id },
             data: updateData,

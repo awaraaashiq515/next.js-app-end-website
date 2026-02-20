@@ -60,6 +60,13 @@ export async function PATCH(
         }
         if (body.status !== undefined) updateData.status = body.status
 
+        // PDI Management
+        if (body.pdiStatus !== undefined) updateData.pdiStatus = body.pdiStatus
+        if (body.pdiType !== undefined) updateData.pdiType = body.pdiType
+        if (body.pdiFiles !== undefined) {
+            updateData.pdiFiles = body.pdiFiles ? (typeof body.pdiFiles === 'string' ? body.pdiFiles : JSON.stringify(body.pdiFiles)) : null
+        }
+
         const updated = await db.dealerVehicle.update({
             where: { id },
             data: updateData,

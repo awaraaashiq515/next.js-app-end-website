@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
     CheckCircle2, X, AlertCircle, Loader2, Trash2, Star, StarOff,
-    Car, Bike, Search, RefreshCw, Filter
+    Car, Bike, Search, RefreshCw, Filter, FileText, ImageIcon, Eye,
+    ExternalLink, ShieldCheck
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
@@ -24,6 +25,9 @@ interface DealerVehicle {
     isFeatured: boolean
     images: string | null
     city: string | null
+    pdiStatus: string | null
+    pdiType: string | null
+    pdiFiles: string | null
     createdAt: string
     dealer: {
         id: string
@@ -46,6 +50,7 @@ export default function AdminDealerVehiclesPage() {
     const [loading, setLoading] = useState(true)
     const [actionLoading, setActionLoading] = useState<string | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+    const [pdiModal, setPdiModal] = useState<DealerVehicle | null>(null)
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState("ALL")
 
@@ -97,6 +102,27 @@ export default function AdminDealerVehiclesPage() {
         try {
             const res = await fetch(`/api/admin/dealer-vehicles/${id}`, { method: "DELETE" })
             if (res.ok) { setDeleteConfirm(null); fetchVehicles() }
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    const handleDeletePdi = async (vehicle: DealerVehicle) => {
+        setActionLoading(vehicle.id + "-pdi-del")
+        try {
+            const res = await fetch(`/api/admin/dealer-vehicles/${vehicle.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    pdiStatus: "No",
+                    pdiType: null,
+                    pdiFiles: null
+                }),
+            })
+            if (res.ok) {
+                setPdiModal(null)
+                fetchVehicles()
+            }
         } finally {
             setActionLoading(null)
         }
@@ -167,6 +193,7 @@ export default function AdminDealerVehiclesPage() {
                                 <th className="px-6 py-4">Vehicle</th>
                                 <th className="px-6 py-4">Dealer</th>
                                 <th className="px-6 py-4 text-center">Status</th>
+                                <th className="px-6 py-4 text-center">PDI</th>
                                 <th className="px-6 py-4 text-center">Featured</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
@@ -209,6 +236,41 @@ export default function AdminDealerVehiclesPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
+                                            {vehicle.pdiStatus === "Yes" ? (
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20">
+                                                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                                                        PDI YES
+                                                    </Badge>
+                                                    <div className="flex gap-1">
+                                                        {(() => {
+                                                            try {
+                                                                const files = JSON.parse(vehicle.pdiFiles || "[]")
+                                                                if (vehicle.pdiType === "PDF") {
+                                                                    return (
+                                                                        <a href={`/${files[0]}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors" title="View PDF">
+                                                                            <FileText className="w-3.5 h-3.5" />
+                                                                        </a>
+                                                                    )
+                                                                } else {
+                                                                    return (
+                                                                        <button
+                                                                            onClick={() => setPdiModal(vehicle)}
+                                                                            className="p-1.5 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors" title={`View ${files.length} Images`}
+                                                                        >
+                                                                            <ImageIcon className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    )
+                                                                }
+                                                            } catch { return null }
+                                                        })()}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">No PDI</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
                                             <button
                                                 onClick={() => handleToggleFeatured(vehicle)}
                                                 disabled={actionLoading === vehicle.id + "-feat"}
@@ -218,9 +280,14 @@ export default function AdminDealerVehiclesPage() {
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <Button size="icon" variant="ghost" onClick={() => setDeleteConfirm(vehicle.id)} className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            <div className="flex justify-end gap-2">
+                                                <Button size="icon" variant="ghost" onClick={() => setPdiModal(vehicle)} className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-500">
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <Button size="icon" variant="ghost" onClick={() => setDeleteConfirm(vehicle.id)} className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 )
@@ -243,6 +310,104 @@ export default function AdminDealerVehiclesPage() {
                                     {actionLoading === deleteConfirm + "-del" ? "Deleting..." : "Delete"}
                                 </Button>
                             </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+            {/* PDI Management Modal */}
+            {pdiModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+                    <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden bg-card shadow-2xl border-border/50 flex flex-col">
+                        <div className="p-6 border-b border-border/50 flex items-center justify-between bg-muted/30">
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+                                    <ShieldCheck className="w-5 h-5 text-blue-500" />
+                                    PDI Certificate Manager
+                                </h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">{pdiModal.title} · {pdiModal.dealer.dealerBusinessName || pdiModal.dealer.name}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setPdiModal(null)} className="rounded-full">
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            {pdiModal.pdiStatus === "Yes" ? (
+                                <div className="space-y-8">
+                                    <div className="flex items-center justify-between p-6 rounded-[1.5rem] bg-blue-500/5 border border-blue-500/10">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                                {pdiModal.pdiType === "PDF" ? <FileText className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold uppercase tracking-widest text-[#555]">Certificate Type</p>
+                                                <p className="font-black text-blue-500">{pdiModal.pdiType === "PDF" ? "Digital PDF Report" : "Inspection Image Gallery"}</p>
+                                            </div>
+                                        </div>
+                                        {pdiModal.pdiType === "PDF" && (
+                                            <a
+                                                href={`/${JSON.parse(pdiModal.pdiFiles || "[]")[0]}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                                            >
+                                                <ExternalLink className="w-3.5 h-3.5" /> View Original
+                                            </a>
+                                        )}
+                                    </div>
+
+                                    {pdiModal.pdiType === "IMAGES" && (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {JSON.parse(pdiModal.pdiFiles || "[]").map((path: string, i: number) => (
+                                                <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden border border-border shadow-sm">
+                                                    <img src={`/${path}`} className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                        <a href={`/${path}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white text-black hover:scale-110 transition-transform">
+                                                            <ExternalLink className="w-4 h-4" />
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {pdiModal.pdiType === "PDF" && (
+                                        <div className="aspect-[4/5] w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-border bg-muted/50 flex items-center justify-center text-muted-foreground p-12 text-center flex-col gap-4">
+                                            <FileText className="w-16 h-16 opacity-20" />
+                                            <p className="text-sm font-medium">PDF content displayed in new tab for security.</p>
+                                            <a href={`/${JSON.parse(pdiModal.pdiFiles || "[]")[0]}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 font-bold hover:underline">Click here to view PDF</a>
+                                        </div>
+                                    )}
+
+                                    <div className="pt-8 border-t border-border/50">
+                                        <div className="p-6 rounded-[1.5rem] bg-red-500/5 border border-red-500/10 flex flex-col md:flex-row items-center justify-between gap-6">
+                                            <div>
+                                                <h4 className="text-lg font-bold text-red-500 flex items-center gap-2 italic">
+                                                    <AlertCircle className="w-5 h-5" /> Danger Zone
+                                                </h4>
+                                                <p className="text-xs text-muted-foreground mt-1">Deleting this PDI record will permanently remove it from the public listing. This cannot be undone.</p>
+                                            </div>
+                                            <Button
+                                                variant="destructive"
+                                                disabled={actionLoading === pdiModal.id + "-pdi-del"}
+                                                onClick={() => handleDeletePdi(pdiModal)}
+                                                className="px-8 py-6 rounded-2xl font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 transition-all shadow-xl shadow-red-900/20 flex items-center gap-2"
+                                            >
+                                                {actionLoading === pdiModal.id + "-pdi-del" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                                Revoke PDI Status
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="py-20 text-center space-y-4">
+                                    <div className="w-20 h-20 rounded-full bg-muted mx-auto flex items-center justify-center text-muted-foreground/30">
+                                        <ShieldCheck className="w-10 h-10" />
+                                    </div>
+                                    <h3 className="text-xl font-bold uppercase tracking-tight">No Active PDI Record</h3>
+                                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">This vehicle has not undergone a Pre-Delivery Inspection or the certificate has been removed.</p>
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </div>

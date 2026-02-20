@@ -135,6 +135,10 @@ export async function POST(request: NextRequest) {
                 city: city || null,
                 state: state || null,
                 images: images ? (typeof images === 'string' ? images : JSON.stringify(images)) : null,
+                pdiStatus: body.pdiStatus || "No",
+                pdiType: body.pdiType || null,
+                pdiFiles: body.pdiFiles ? (typeof body.pdiFiles === 'string' ? body.pdiFiles : JSON.stringify(body.pdiFiles)) : null,
+                rcAvailable: body.rcAvailable || "No",
                 status: "DRAFT",
             },
         })

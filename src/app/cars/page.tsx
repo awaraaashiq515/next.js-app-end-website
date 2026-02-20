@@ -1,138 +1,94 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Navbar } from "@/components/layout/navbar"
 import {
     Car,
-    Search,
-    Filter,
     ArrowUpDown,
-    Wrench,
     ChevronRight,
-    Loader2
+    Loader2,
+    Eye,
+    ShieldCheck,
+    Award,
+    MapPin,
+    Zap,
+    Fuel,
+    Gauge,
+    Calendar,
+    MessageSquare,
 } from "lucide-react"
 import Link from "next/link"
+import { WishlistButton } from "@/components/shared/WishlistButton"
+import AdvancedSearchPanel from "@/components/client/AdvancedSearchPanel"
 
 export default function CarsPage() {
     const [vehicles, setVehicles] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [filters, setFilters] = useState({
-        make: "",
-        minPrice: "",
-        maxPrice: "",
-        minYear: ""
-    })
 
-    const fetchVehicles = () => {
+    const fetchVehicles = useCallback((searchFilters?: Record<string, string>) => {
         setLoading(true)
-        const params = new URLSearchParams({
-            type: "CAR",
-            ...filters
-        })
+        const raw: Record<string, string> = { type: "CAR", ...(searchFilters || {}) }
+        // Strip empty values
+        const params = new URLSearchParams(
+            Object.fromEntries(Object.entries(raw).filter(([, v]) => v !== ""))
+        )
         fetch(`/api/vehicles?${params.toString()}`)
             .then(r => r.json())
             .then(data => setVehicles(data.vehicles || []))
             .catch(() => { })
             .finally(() => setLoading(false))
-    }
+    }, [])
 
     useEffect(() => {
         fetchVehicles()
-    }, [])
-
-    const handleFilterChange = (key: string, val: string) => {
-        setFilters(f => ({ ...f, [key]: val }))
-    }
+    }, [fetchVehicles])
 
     const featuredCars = vehicles.filter(v => v.isFeatured)
     const regularCars = vehicles.filter(v => !v.isFeatured)
 
     return (
-        <div className="min-h-screen bg-[#08090c]">
+        <div className="min-h-screen bg-white text-zinc-900 selection:bg-zinc-100">
             <Navbar />
 
-            {/* Header */}
-            <header className="relative py-24 px-6 md:px-14 overflow-hidden">
-                <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-white/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
-
-                <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-1 h-0.5 bg-[#e8a317]"></div>
-                        <span className="text-xs font-black uppercase tracking-[0.4em] text-[#e8a317]">Premium Fleet</span>
+            {/* Modern Ivory Header */}
+            <header className="pt-28 pb-20 px-6 md:px-12 bg-zinc-50/50">
+                <div className="max-w-7xl mx-auto">
+                    <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-white border border-zinc-200 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Official Inventory</span>
                     </div>
-                    <h1 className="font-display text-[clamp(48px,8vw,80px)] font-extrabold tracking-tight uppercase italic leading-none text-white">
-                        Find Your Next <br /> <span className="text-gray-500">Perfect Car</span>
+                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 mb-6">
+                        Discover your <br />
+                        <span className="text-zinc-400">perfect automobile.</span>
                     </h1>
+                    <p className="text-zinc-500 text-lg max-w-2xl font-medium leading-relaxed">
+                        Navigate through our curated selection of high-performance vehicles, each verified and documented for complete transparency.
+                    </p>
                 </div>
             </header>
 
-            {/* Filters Bar */}
-            <section className="px-6 md:px-14 -mt-10 mb-20">
+            {/* Advanced Search Panel */}
+            <section className="px-6 md:px-12 -mt-8 mb-20 relative z-20">
                 <div className="max-w-7xl mx-auto">
-                    <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-4 flex flex-wrap items-center gap-4 shadow-2xl">
-                        <div className="flex-1 min-w-[200px] relative">
-                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#444]" />
-                            <input
-                                type="text"
-                                placeholder="Search Brand (e.g. Maruti, BMW)..."
-                                value={filters.make}
-                                onChange={e => handleFilterChange("make", e.target.value)}
-                                className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-white/20 transition-all"
-                            />
-                        </div>
-                        <div className="flex items-center gap-4 flex-wrap">
-                            <select
-                                value={filters.minPrice}
-                                onChange={e => handleFilterChange("minPrice", e.target.value)}
-                                className="bg-black/40 border border-white/5 rounded-2xl p-4 text-sm text-[#888] appearance-none cursor-pointer hover:border-white/10"
-                            >
-                                <option value="">Min Price</option>
-                                <option value="100000">₹1 Lakh+</option>
-                                <option value="500000">₹5 Lakh+</option>
-                                <option value="1000000">₹10 Lakh+</option>
-                            </select>
-                            <select
-                                value={filters.maxPrice}
-                                onChange={e => handleFilterChange("maxPrice", e.target.value)}
-                                className="bg-black/40 border border-white/5 rounded-2xl p-4 text-sm text-[#888] appearance-none cursor-pointer hover:border-white/10"
-                            >
-                                <option value="">Max Price</option>
-                                <option value="500000">Up to ₹5 Lakh</option>
-                                <option value="1000000">Up to ₹10 Lakh</option>
-                                <option value="5000000">Up to ₹50 Lakh</option>
-                            </select>
-                            <select
-                                value={filters.minYear}
-                                onChange={e => handleFilterChange("minYear", e.target.value)}
-                                className="bg-black/40 border border-white/5 rounded-2xl p-4 text-sm text-[#888] appearance-none cursor-pointer hover:border-white/10"
-                            >
-                                <option value="">Year</option>
-                                <option value="2020">2020 & Newer</option>
-                                <option value="2015">2015 & Newer</option>
-                                <option value="2010">2010 & Newer</option>
-                            </select>
-                            <button
-                                onClick={fetchVehicles}
-                                className="bg-white text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-all flex items-center gap-2"
-                            >
-                                <Filter className="w-3 h-3" /> Apply
-                            </button>
-                        </div>
-                    </div>
+                    <AdvancedSearchPanel onSearch={fetchVehicles} />
                 </div>
             </section>
 
-            {/* List */}
-            <main className="px-6 md:px-14 pb-32">
+            {/* Inventory List Section */}
+            <main className="px-6 md:px-12 pb-32">
                 <div className="max-w-7xl mx-auto space-y-24">
-                    {/* Featured Section */}
+
+                    {/* Featured Row */}
                     {featuredCars.length > 0 && (
                         <div>
-                            <div className="flex items-center justify-between mb-8">
-                                <h2 className="text-xl font-black uppercase tracking-widest text-white italic">Featured Masterpieces</h2>
-                                <div className="text-[10px] font-bold text-[#444] uppercase tracking-widest">Handpicked Selections</div>
+                            <div className="flex items-center justify-between mb-10">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-zinc-900 tracking-tight">Featured Selection</h2>
+                                    <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest mt-1">Handpicked Premium Assets</p>
+                                </div>
+                                <div className="hidden sm:block w-24 h-[1px] bg-zinc-100"></div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                                 {featuredCars.map(vehicle => (
                                     <VehicleCard key={vehicle.id} vehicle={vehicle} featured />
                                 ))}
@@ -140,40 +96,52 @@ export default function CarsPage() {
                         </div>
                     )}
 
-                    {/* All Cars */}
+                    {/* Standard List */}
                     <div>
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-black uppercase tracking-widest text-white italic">Available Collection</h2>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-[#444] uppercase tracking-widest">
-                                <ArrowUpDown className="w-3 h-3" /> Latest Arrivals
+                        <div className="flex items-center justify-between mb-10">
+                            <h2 className="text-2xl font-bold text-zinc-900 tracking-tight italic">Our Collection</h2>
+                            <div className="flex items-center gap-3 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                                <ArrowUpDown className="w-3.5 h-3.5" /> Sort: Latest
                             </div>
                         </div>
+
                         {loading ? (
-                            <div className="flex justify-center py-20">
-                                <Loader2 className="w-10 h-10 animate-spin text-[#222]" />
+                            <div className="flex flex-col items-center justify-center py-40 gap-4">
+                                <Loader2 className="w-10 h-10 animate-spin text-zinc-200" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">Building Inventory...</span>
                             </div>
                         ) : regularCars.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                                 {regularCars.map(vehicle => (
                                     <VehicleCard key={vehicle.id} vehicle={vehicle} />
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-32 border border-dashed border-white/5 rounded-[3rem]">
-                                <Car className="w-12 h-12 text-[#111] mx-auto mb-4" />
-                                <p className="text-[#444] font-bold uppercase tracking-widest">No matching cars found.</p>
+                            <div className="text-center py-40 bg-zinc-50 border border-zinc-100 rounded-[2.5rem]">
+                                <Car className="w-12 h-12 text-zinc-200 mx-auto mb-6 opacity-50" />
+                                <h3 className="text-lg font-bold text-zinc-900 mb-2">No matching vehicles</h3>
+                                <p className="text-zinc-400 text-xs font-medium">Try different search terms or reset filters.</p>
                             </div>
                         )}
                     </div>
                 </div>
             </main>
 
-            <footer className="py-20 px-6 md:px-14 border-t border-white/5 bg-[#0a0a0a]">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 text-[#444]">
-                    <div className="font-display text-xl font-black italic uppercase tracking-widest white">
-                        Listing<span className="text-[#e8a317]">Garage</span>
+            {/* Minimalist Footer */}
+            <footer className="py-20 px-6 md:px-12 border-t border-zinc-100 bg-white">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
+                    <div className="flex flex-col items-center md:items-start gap-3">
+                        <div className="text-xl font-bold tracking-tighter text-zinc-900 uppercase">
+                            Listing<span className="text-zinc-300 italic">Garage</span>
+                        </div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-300">Premium Automotive Network</p>
                     </div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.3em]">© 2026 Premium Car Portal</p>
+                    <div className="flex gap-10 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                        <Link href="/cars" className="hover:text-zinc-900 transition-colors">Inventory</Link>
+                        <Link href="/dealer/vehicles/add" className="hover:text-zinc-900 transition-colors">Dealer Portal</Link>
+                        <Link href="#" className="hover:text-zinc-900 transition-colors">Documentation</Link>
+                    </div>
+                    <p className="text-[10px] font-medium text-zinc-300">© 2026 ListingGarage Enterprise</p>
                 </div>
             </footer>
         </div>
@@ -185,44 +153,91 @@ function VehicleCard({ vehicle, featured }: { vehicle: any, featured?: boolean }
     const thumb = imgs[0] || null
 
     return (
-        <Link href={`/cars/${vehicle.id}`} className={`group rounded-[2.5rem] overflow-hidden flex flex-col transition-all duration-500 hover:scale-[1.02] ${featured ? 'border-2 border-[#e8a317]/20 shadow-[0_30px_60px_rgba(232,163,23,0.05)]' : 'bg-[#111] border border-white/5 shadow-xl'}`}>
-            <div className="h-64 relative overflow-hidden bg-black">
+        <Link href={`/cars/${vehicle.id}`} className={`group flex flex-col bg-white rounded-[2rem] overflow-hidden border border-zinc-100 transition-all duration-500 hover:border-zinc-300 hover:shadow-xl hover:shadow-zinc-200/40 ${featured ? 'bg-zinc-50/30' : ''}`}>
+
+            {/* Image Section */}
+            <div className="h-64 relative overflow-hidden bg-zinc-100">
                 {thumb ? (
-                    <img src={thumb} alt={vehicle.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <img src={thumb} alt={vehicle.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-10"><Car className="w-16 h-16" /></div>
-                )}
-                {featured && (
-                    <div className="absolute top-6 right-6 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-[#e8a317]/30 text-[#e8a317] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#e8a317] animate-pulse"></span>
-                        Premium Listing
+                    <div className="w-full h-full flex items-center justify-center opacity-20">
+                        <Car className="w-16 h-16" />
                     </div>
                 )}
-            </div>
-            <div className="p-8 flex flex-col flex-1">
-                <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-white line-clamp-1 group-hover:text-[#e8a317] transition-colors">{vehicle.title}</h3>
+
+                {/* Status Overlays */}
+                <div className="absolute top-5 right-5 flex flex-col items-end gap-2">
+                    {featured && (
+                        <div className="px-3 py-1 rounded-lg bg-white/90 backdrop-blur-md shadow-sm border border-zinc-200 text-zinc-600 text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+                            <Award className="w-3.5 h-3.5" /> High-End Selection
+                        </div>
+                    )}
+                    {vehicle.pdiStatus === "Yes" && (
+                        <div className="px-3 py-1 rounded-lg bg-zinc-900 text-white text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5" /> Certified PDI
+                        </div>
+                    )}
                 </div>
-                <div className="text-2xl font-black text-white mb-4">₹{vehicle.price.toLocaleString('en-IN')}</div>
 
-                <p className="text-[11px] mb-6 flex items-center gap-2 text-[#666] font-bold uppercase tracking-widest">
-                    <Wrench className="w-3 h-3 text-[#333]" />
-                    {vehicle.dealer.dealerBusinessName || vehicle.dealer.name}
-                </p>
+                <div className="absolute top-5 left-5 z-20">
+                    <WishlistButton vehicleId={vehicle.id} variant="icon" className="shadow-lg !bg-white/90" />
+                </div>
+            </div>
 
-                <div className="flex flex-wrap gap-2 mb-8">
-                    {[vehicle.year, vehicle.fuelType, vehicle.transmission, vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : null].filter(Boolean).map((tag, idx) => (
-                        <div key={idx} className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[#555]">{tag}</div>
+            {/* Professional Data Layout */}
+            <div className="p-7 flex flex-col flex-1">
+
+                <div className="mb-6">
+                    <h3 className="text-xl font-bold text-zinc-900 tracking-tight leading-tight group-hover:text-zinc-500 transition-colors">{vehicle.title}</h3>
+                    <div className="flex items-center gap-2 mt-2 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                        <MapPin className="w-3 h-3" />
+                        {vehicle.city || 'Regional Hub'}
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-8 pb-6 border-b border-zinc-50">
+                    <div className="text-2xl font-bold text-zinc-900 tracking-tight">₹{vehicle.price.toLocaleString('en-IN')}</div>
+                    {vehicle.rcAvailable === "Yes" ? (
+                        <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 shadow-sm transition-all hover:scale-105">RC Verified</div>
+                    ) : (
+                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-zinc-100 px-3 py-1.5 rounded-lg border border-zinc-200 shadow-sm transition-all hover:scale-105">RC Pending</div>
+                    )}
+                </div>
+
+                {/* Spec Summary */}
+                <div className="grid grid-cols-2 gap-3 mb-8">
+                    {[
+                        { icon: Calendar, val: vehicle.year, color: "text-amber-500", bg: "bg-amber-50/50" },
+                        { icon: Fuel, val: vehicle.fuelType, color: "text-blue-500", bg: "bg-blue-50/50" },
+                        { icon: Gauge, val: vehicle.mileage ? `${(vehicle.mileage / 1000).toFixed(0)}k km` : null, color: "text-emerald-500", bg: "bg-emerald-50/50" },
+                        { icon: Zap, val: vehicle.transmission?.slice(0, 4), color: "text-purple-500", bg: "bg-purple-50/50" }
+                    ].filter(b => b.val).map((bit, i) => (
+                        <div key={i} className={`flex items-center gap-2.5 px-3 py-2.5 ${bit.bg} rounded-xl border border-zinc-100/50 transition-all duration-300 hover:scale-[1.03] hover:shadow-sm hover:border-zinc-200`}>
+                            <bit.icon className={`w-4 h-4 ${bit.color}`} />
+                            <span className="text-xs font-bold text-zinc-700 uppercase tracking-tight">{bit.val}</span>
+                        </div>
                     ))}
                 </div>
 
-                <div className="mt-auto flex items-center justify-between pt-6 border-t border-white/5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#333]">Location: {vehicle.city || 'Anywhere'}</span>
-                    <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#888] hover:text-white transition-colors">
-                        Inquire <ChevronRight className="w-3 h-3" />
-                    </button>
+                <div className="mt-auto pt-6 flex items-center justify-between">
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-300">{vehicle.dealer.dealerBusinessName || vehicle.dealer.name || "Enterprise"}</span>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-400">
+                            <Eye className="w-3 h-3" />
+                            {vehicle.views || 0}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-zinc-200 text-xs font-bold text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 hover:shadow-md transition-all active:scale-95">
+                            <MessageSquare className="w-4 h-4" /> Inquire
+                        </button>
+                        <div className="w-11 h-11 rounded-xl bg-zinc-900 text-white flex items-center justify-center group-hover:bg-zinc-800 transition-all shadow-lg active:scale-95">
+                            <ChevronRight className="w-6 h-6" />
+                        </div>
+                    </div>
                 </div>
             </div>
-        </Link>
+        </Link >
     )
 }

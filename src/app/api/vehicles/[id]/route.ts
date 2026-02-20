@@ -25,6 +25,12 @@ export async function GET(
             return NextResponse.json({ error: "Vehicle not found" }, { status: 404 })
         }
 
+        // Increment views
+        await db.dealerVehicle.update({
+            where: { id },
+            data: { views: { increment: 1 } }
+        })
+
         return NextResponse.json({ vehicle })
     } catch (error) {
         console.error("GET /api/vehicles/[id] error:", error)
